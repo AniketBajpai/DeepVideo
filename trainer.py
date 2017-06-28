@@ -33,7 +33,8 @@ class Trainer(object):
         #     str(configs.learner_hyperparameters.update_ratio),
         #     str(1)
         # )
-        self.train_dir = './train_dir/{}-{}-{}'.format(
+        self.train_dir = '{}/train_dir/{}-{}-{}'.format(
+            configs.home_dir,
             configs.prefix,
             hyperparameter_str,
             strftime('%Y%m%d-%H%M%S')
@@ -128,7 +129,7 @@ class Trainer(object):
         self.summaries_secs = configs.summaries_secs
         self.checkpoint_secs = configs.checkpoint_secs
 
-        # TODO: check saver and summary_op
+        # Automatic saving of models and summaries disabled
         self.supervisor = tf.train.Supervisor(
             logdir=self.train_dir,
             is_chief=True,
@@ -165,7 +166,7 @@ class Trainer(object):
         log_step = self.configs.log_step
 
         for s in tqdm(xrange(max_steps)):
-            step, ae_loss, step_time, generated_current_frames, generated_future_frames = self.run_single_step(
+            step, ae_loss, summary, step_time, generated_current_frames, generated_future_frames = self.run_single_step(
                 self.batch_train, step=s, is_train=True)
 
             # periodic inference
@@ -176,7 +177,7 @@ class Trainer(object):
             if s % log_step == 0:
                 self.log_step_message(step, ae_loss, step_time)
 
-            # self.summary_writer.add_summary(summary, global_step=step)
+            self.summary_writer.add_summary(summary, global_step=step)
 
             if s % output_save_step == 0:
                 log.infov('Saved checkpoint at %d', s)
@@ -195,7 +196,7 @@ class Trainer(object):
 
         batch_chunk = self.session.run(batch)
 
-        fetch = [self.global_step, self.model.loss['autoencoder'], self.model.generated_current_frames,
+        fetch = [self.global_step, self.model.loss['autoencoder'], self.summary_op, self.model.generated_current_frames,
                  self.model.generated_future_frames, self.check_op]
 
         # if step % (self.config.update_rate + 1) > 0:
@@ -206,20 +207,21 @@ class Trainer(object):
         #     fetch.append(self.d_optimizer)
         fetch.append(self.ae_optimizer)
 
-        step, ae_loss, generated_current_frames, generated_future_frames, _, _ = self.session.run(
+        step, ae_loss, summary, generated_current_frames, generated_future_frames, _, _ = self.session.run(
             fetch,
             feed_dict=self.model.get_feed_dict(batch_chunk, step=step, is_train=True)
         )
 
         _end_time = time()
 
-        return step, ae_loss, (_end_time - _start_time), generated_current_frames, generated_future_frames
+        return step, ae_loss, summary, (_end_time - _start_time), generated_current_frames, generated_future_frames
 
     def run_test(self, batch, is_train=False, repeat_times=8):
         ''' Run test iteration on batch '''
 
         batch_chunk = self.session.run(batch)
-        fetch = [self.global_step, self.model.loss['autoencoder'], self.model.generated_current_frames, self.model.generated_future_frames]
+        fetch = [self.global_step, self.model.loss['autoencoder'],
+                 self.model.generated_current_frames, self.model.generated_future_frames]
 
         [step, ae_loss, generated_current_frames, generated_future_frames] = self.session.run(
             fetch,

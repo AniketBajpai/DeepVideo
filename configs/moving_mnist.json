@@ -1,4 +1,5 @@
 {
+  "home_dir": "/home/quantumcoder/DeepVideo",
   "dataset": "moving_mnist",
   "data_file": "moving_mnist.npy",
   "crop_height": 64,

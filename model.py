@@ -34,19 +34,22 @@ class Encoder(object):
             print_message(scope.name)
             with tf.variable_scope('conv1') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l1)
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l2)
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l3)
                 self.net['conv3_outputs'] = outputs
@@ -54,7 +57,8 @@ class Encoder(object):
                 fc_dim = reduce(mul, self.configs.conv_info.l3, 1)
                 outputs = tf.reshape(outputs, [self.batch_size] + [fc_dim], name='reshape')
                 outputs = linear(outputs, self.latent_dimension)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 self.net['fc_outputs'] = outputs
 
         self.reuse = True
@@ -89,32 +93,37 @@ class Generator(object):
             with tf.variable_scope('fc_f') as vscope:
                 fc_dim = reduce(mul, self.configs.deconv_f_info.l1, 1)
                 outputs_f = linear(inputs, fc_dim)
-                print(vscope.name, outputs_f)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_f)
                 assert(outputs_f.get_shape().as_list() == [self.batch_size, fc_dim])
                 # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 outputs_f = tf.reshape(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l1, name='reshape')
                 self.net['f_fc_outputs'] = outputs_f
             with tf.variable_scope('deconv2_f') as vscope:
                 outputs_f = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l2)
-                print(vscope.name, outputs_f)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_f)
                 # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l2)
                 self.net['f_deconv2_outputs'] = outputs_f
             with tf.variable_scope('deconv3_f') as vscope:
                 outputs_f = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l3)
-                print(vscope.name, outputs_f)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_f)
                 # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l3)
                 self.net['f_deconv3_outputs'] = outputs_f
             with tf.variable_scope('deconv4_fi') as vscope:
                 outputs_fi = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l4_i)
-                print(vscope.name, outputs_fi)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_fi)
                 assert(outputs_fi.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4_i)
                 outputs_fi = tf.nn.tanh(outputs_fi)
                 self.net['f_deconv4i_outputs'] = outputs_fi
             with tf.variable_scope('deconv4_fm') as vscope:
                 outputs_fm = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l4_m)
-                print(vscope.name, outputs_fm)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_fm)
                 assert(outputs_fm.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4_m)
                 outputs_fm = tf.nn.sigmoid(outputs_fm)
                 self.net['f_deconv4m_outputs'] = outputs_fm
@@ -123,25 +132,32 @@ class Generator(object):
             with tf.variable_scope('fc_b') as vscope:
                 fc_dim = reduce(mul, self.configs.deconv_b_info.l1, 1)
                 outputs_b = linear(inputs, fc_dim)
-                print(vscope.name, outputs_b)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size, fc_dim])
                 # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
                 outputs_b = tf.reshape(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l1, name='reshape')
             with tf.variable_scope('deconv2_b') as vscope:
-                outputs_b = deconv2d(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l2, is_train=self.is_train)
-                print(vscope.name, outputs_b)
+                outputs_b = deconv2d(outputs_b, [self.batch_size] +
+                                     self.configs.deconv_b_info.l2, is_train=self.is_train)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_b)
                 # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l2)
                 self.net['b_deconv2_outputs'] = outputs_b
             with tf.variable_scope('deconv3_b') as vscope:
-                outputs_b = deconv2d(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l3, is_train=self.is_train)
-                print(vscope.name, outputs_b)
+                outputs_b = deconv2d(outputs_b, [self.batch_size] +
+                                     self.configs.deconv_b_info.l3, is_train=self.is_train)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_b)
                 # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l3)
                 self.net['b_deconv3_outputs'] = outputs_b
             with tf.variable_scope('deconv4_b') as vscope:
-                outputs_b = deconv2d(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l4, is_train=self.is_train)
-                print(vscope.name, outputs_b)
+                outputs_b = deconv2d(outputs_b, [self.batch_size] +
+                                     self.configs.deconv_b_info.l4, is_train=self.is_train)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l4)
                 self.net['b_deconv4_outputs'] = outputs_b
 
@@ -179,24 +195,28 @@ class Discriminator(object):
             print_message(scope.name)
             with tf.variable_scope('conv1') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv3_outputs'] = outputs
             with tf.variable_scope('fc') as vscope:
                 fc_dim = reduce(mul, self.configs.conv_info.l3, 1)
                 outputs = tf.reshape(outputs, [self.batch_size] + [fc_dim], name='reshape')
                 outputs = linear(outputs, 1)
-                print(vscope.name, outputs)
+                if is_debug and not self.reuse:
+                    print(vscope.name, outputs)
                 self.net['fc_outputs'] = outputs
 
         self.reuse = True
@@ -245,6 +265,7 @@ class Model:
         # Build model and loss
         self.build_model(is_train)
         self.build_loss()
+        self.build_summary()
 
     def get_feed_dict(self, batch_chunk, step=None, is_train=True):
         ''' Organize data into a feed dictionary '''
@@ -298,6 +319,8 @@ class Model:
         # self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
         # self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
 
+        print_message('Successfullt loaded the model')
+
     def build_loss(self):
         ''' Build model loss and accuracy '''
         self.loss = {}
@@ -339,3 +362,21 @@ class Model:
 
         # # Classification accuracy - for supervised
         # self.accuracy
+
+    def build_summary(self):
+        ''' Build summary for model '''
+        # Latent variable distribution
+        tf.summary.histogram('latent', self.z)
+
+        # Loss summary
+        tf.summary.scalar('loss/input_reconstruction_loss', self.loss['input_reconstruction_loss'])
+        tf.summary.scalar('loss/future_reconstruction_loss', self.loss['future_reconstruction_loss'])
+        tf.summary.scalar('loss/autoencoder', self.loss['autoencoder'])
+
+        # Generated data summary
+        generated_current_summary = tf.reshape(self.generated_current_frames,
+                                               (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
+        tf.summary.image('generated/current', generated_current_summary)
+        generated_future_summary = tf.reshape(self.generated_future_frames,
+                                              (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
+        tf.summary.image('generated/future', generated_future_summary)
