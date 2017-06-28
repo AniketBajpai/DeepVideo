@@ -2,3 +2,5 @@
 *.meta
 *.chkp
 train_dir/
+log/
+checkpoints/

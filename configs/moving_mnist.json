@@ -35,10 +35,20 @@
       "l4": [64, 64, 1]
     }
   },
+  "configs_discriminator": {
+    "conv_info": {
+      "input": [10, 64, 64, 1],
+      "l1": [5, 32, 32, 64],
+      "l2": [3, 16, 16, 128],
+      "l3": [2, 8, 8, 256]
+    }
+  },
   "learner_hyperparameters": {
     "lr_ae": 1e-4,
+    "lr_d": 5e-5,
     "beta1": 0.5,
     "lr_weight_decay": 1,
+    "update_ratio": 5,
     "clip_gradients": 20.0
   },
   "prefix": "autoencoder",

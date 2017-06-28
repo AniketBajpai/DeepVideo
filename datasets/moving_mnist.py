@@ -76,8 +76,9 @@ class DataLoader(object):
         return ('Dataset ({}, {} examples)'.format(self.name, len(self.ids)))
 
 
-def load_configs():
-    config_filename = os.path.join(os.path.abspath('.'), 'configs', 'moving_mnist.json')
+def load_configs(config_filename=None):
+    if config_filename is None:
+        config_filename = os.path.join(os.path.abspath('.'), 'configs', 'moving_mnist.json')
     print ('Config file:', config_filename)
     configs = from_json_file(config_filename)
     return configs
