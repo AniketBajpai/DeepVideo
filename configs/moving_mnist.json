@@ -1,0 +1,53 @@
+{
+  "dataset": "moving_mnist",
+  "data_file": "moving_mnist.npy",
+  "crop_height": 64,
+  "crop_width": 64,
+  "batch_size": 4,
+  "latent_dimension": 200,
+  "data_info": {
+    "num_frames": 10,
+    "image_height": 64,
+    "image_width": 64,
+    "num_channels": 1
+  },
+  "configs_encoder": {
+    "conv_info": {
+      "input": [10, 64, 64, 1],
+      "l1": [5, 32, 32, 64],
+      "l2": [3, 16, 16, 128],
+      "l3": [2, 8, 8, 256]
+    }
+  },
+  "configs_generator": {
+    "deconv_f_info": {
+      "l1": [2, 8, 8, 256],
+      "l2": [3, 16, 16, 128],
+      "l3": [5, 32, 32, 64],
+      "l4_i": [10, 64, 64, 1],
+      "l4_m": [10, 64, 64, 1]
+    },
+    "deconv_b_info": {
+      "l1": [8, 8, 256],
+      "l2": [16, 16, 128],
+      "l3": [32, 32, 64],
+      "l4": [64, 64, 1]
+    }
+  },
+  "learner_hyperparameters": {
+    "lr_ae": 1e-4,
+    "beta1": 0.5,
+    "lr_weight_decay": 1,
+    "clip_gradients": 20.0
+  },
+  "prefix": "autoencoder",
+  "ckpt_dir": "./checkpoints/moving_mnist/",
+  "log_dir": "./logs/moving_mnist/",
+  "log_step": 10,
+  "test_step": 100,
+  "summaries_secs": 300,
+  "checkpoint_secs": 600,
+  "output_save_step": 1000,
+  "dump_result": 1,
+  "max_steps": 1000000
+}
