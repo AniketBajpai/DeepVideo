@@ -21,9 +21,9 @@ def download_mnist(download_path):
                 os.path.isfile(os.path.join(data_dir, 'ids.txt')):
             print('Data was downloaded.')
             return
-        else:
-            print('Creating directory for data')
-            os.mkdir(data_dir)
+    else:
+        print('Creating directory for data')
+        os.mkdir(data_dir)
 
     data_url = 'http://www.cs.toronto.edu/~emansim/datasets/bouncing_mnist_test.npy'
     filename = 'moving_mnist.npy'

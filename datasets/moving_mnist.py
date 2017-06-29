@@ -41,7 +41,7 @@ class DataLoader(object):
         # ids_int = [int(x) for x in self.ids]
         # self.data = self.raw_data[:, ids_int, :, :]
         self.data = self.raw_data
-        self.num_data_frames, self.num_samples, self.image_height, self.image_width = self.data.shape
+        self.num_samples, self.num_data_frames, self.image_height, self.image_width = self.data.shape
         # assert(self.num_samples == len(self.ids))
 
         assert(self.configs.crop_height <= self.image_height)
@@ -57,10 +57,8 @@ class DataLoader(object):
         assert(self.num_data_frames >= 2 * self.num_frames)
         self.current_data = self.data[:, 0:self.num_frames, :, :]
         self.future_data = self.data[:, self.num_frames: 2 * self.num_frames, :, :]
-        # self.current_data = self.current_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
-        # self.future_data = self.future_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
-        assert (self.current_data.shape == (self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1))
-        assert (self.future_data.shape == (self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1))
+        self.current_data = self.current_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
+        self.future_data = self.future_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
         print ('Current data shape:', self.current_data.shape)
         print ('Future data shape:', self.future_data.shape)
 
