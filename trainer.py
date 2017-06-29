@@ -51,7 +51,7 @@ class Trainer(object):
         _, self.batch_test = create_input_ops(dataset_test, self.batch_size, is_train=False)
 
         # ------------------ create model ------------------ #
-        self.model = Model(configs)
+        self.model = Model(configs, is_train=True, is_debug=False)
 
         # ------------------ optimizer ------------------ #
         self.global_step = tf.contrib.framework.get_or_create_global_step(graph=None)
@@ -176,6 +176,8 @@ class Trainer(object):
             if s % test_step == 0:
                 ae_loss_test, generated_current_frames_test, generated_future_frames_test = self.run_test(
                     self.batch_test, is_train=False)
+                log.infov('Test')
+                self.log_step_message(step, ae_loss_test, step_time, is_train=False)
 
             if s % log_step == 0:
                 self.log_step_message(step, ae_loss, step_time)
@@ -238,7 +240,7 @@ class Trainer(object):
             step_time = 0.001
         log_fn = (is_train and log.info or log.infov)
         log_fn((' [{split_mode:5s} step {step:4d}] ' +
-                'Autoencoder loss: {ae_loss:.5f} ' +
+                'AE loss: {ae_loss:.5f} ' +
                 # 'Supervised loss: {s_loss:.5f} ' +
                 # 'D loss: {d_loss:.5f} ' +
                 # 'G loss: {g_loss:.5f} ' +

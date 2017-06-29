@@ -29,8 +29,8 @@ class Encoder(object):
         self.is_debug = is_debug
 
         outputs = tf.convert_to_tensor(inputs)   # Check if necessary
-        tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='encoder_max_assert')
-        tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='encoder_min_assert')
+        tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='assert_encoder_max')
+        tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='assert_encoder_min')
 
         assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.input)
         with tf.variable_scope(self.name, reuse=self.reuse) as scope:
@@ -169,8 +169,8 @@ class Generator(object):
             outputs_b = tf.reshape(outputs_b, [self.batch_size, 1] + self.configs.deconv_b_info.l4)
             outputs_b_vol = tf.tile(outputs_b, [1, self.configs.num_frames, 1, 1, 1])
             outputs = outputs_fm * outputs_fi + (1 - outputs_fm) * outputs_b_vol
-            tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='generator_max_assert')
-            tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='generator_min_assert')
+            tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='assert_generator_max')
+            tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='assert_generator_min')
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
