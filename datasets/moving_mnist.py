@@ -55,10 +55,12 @@ class DataLoader(object):
 
         self.num_frames = self.configs.data_info.num_frames
         assert(self.num_data_frames >= 2 * self.num_frames)
-        self.current_data = self.data[0:self.num_frames, :, :, :]
-        self.future_data = self.data[self.num_frames: 2 * self.num_frames, :, :, :]
-        self.current_data = self.current_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
-        self.future_data = self.future_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
+        self.current_data = self.data[:, 0:self.num_frames, :, :]
+        self.future_data = self.data[:, self.num_frames: 2 * self.num_frames, :, :]
+        # self.current_data = self.current_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
+        # self.future_data = self.future_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
+        assert (self.current_data.shape == (self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1))
+        assert (self.future_data.shape == (self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1))
         print ('Current data shape:', self.current_data.shape)
         print ('Future data shape:', self.future_data.shape)
 
