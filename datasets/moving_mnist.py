@@ -40,7 +40,7 @@ class DataLoader(object):
 
         # ids_int = [int(x) for x in self.ids]
         # self.data = self.raw_data[:, ids_int, :, :]
-        self.data = self.raw_data
+        self.data = self.normalize(self.raw_data)
         self.num_samples, self.num_data_frames, self.image_height, self.image_width = self.data.shape
         # assert(self.num_samples == len(self.ids))
 
@@ -61,6 +61,10 @@ class DataLoader(object):
         self.future_data = self.future_data.reshape(self.num_samples, self.num_frames, self.configs.crop_height, self.configs.crop_width, 1)
         print ('Current data shape:', self.current_data.shape)
         print ('Future data shape:', self.future_data.shape)
+
+    def normalize(self, data):
+        ''' Normalizes data (of any dimension) from [0, 255] to [-1, 1] '''
+        return (data / 127.5) - 1
 
     def get_data(self, id):
         id_int = int(id)

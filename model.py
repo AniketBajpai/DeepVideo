@@ -29,6 +29,9 @@ class Encoder(object):
         self.is_debug = is_debug
 
         outputs = tf.convert_to_tensor(inputs)   # Check if necessary
+        tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='encoder_max_assert')
+        tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='encoder_min_assert')
+
         assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.input)
         with tf.variable_scope(self.name, reuse=self.reuse) as scope:
             print_message(scope.name)
@@ -159,12 +162,15 @@ class Generator(object):
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l4)
+                outputs_b = tf.nn.tanh(outputs_b)
                 self.net['b_deconv4_outputs'] = outputs_b
 
             # Construct output video from forground, background, mask
             outputs_b = tf.reshape(outputs_b, [self.batch_size, 1] + self.configs.deconv_b_info.l4)
             outputs_b_vol = tf.tile(outputs_b, [1, self.configs.num_frames, 1, 1, 1])
             outputs = outputs_fm * outputs_fi + (1 - outputs_fm) * outputs_b_vol
+            tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='generator_max_assert')
+            tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='generator_min_assert')
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
@@ -319,7 +325,7 @@ class Model:
         # self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
         # self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
 
-        print_message('Successfullt loaded the model')
+        print_message('Successfully loaded the model')
 
     def build_loss(self):
         ''' Build model loss and accuracy '''

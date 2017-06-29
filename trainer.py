@@ -122,6 +122,9 @@ class Trainer(object):
         # )
 
         self.summary_op = tf.summary.merge_all()
+        assert_ops = tf.get_collection(key='Asserts', scope='Assert')
+        print ('Total asserts:', len(assert_ops))
+        self.assert_op = tf.group(*assert_ops)
 
         self.saver = tf.train.Saver(max_to_keep=100)
         self.summary_writer = tf.summary.FileWriter(self.train_dir)
@@ -196,7 +199,7 @@ class Trainer(object):
 
         batch_chunk = self.session.run(batch)
 
-        fetch = [self.global_step, self.model.loss['autoencoder'], self.summary_op, self.model.generated_current_frames,
+        fetch = [self.global_step, self.model.loss['autoencoder'], self.summary_op, self.assert_op, self.model.generated_current_frames,
                  self.model.generated_future_frames, self.check_op]
 
         # if step % (self.config.update_rate + 1) > 0:
@@ -207,7 +210,7 @@ class Trainer(object):
         #     fetch.append(self.d_optimizer)
         fetch.append(self.ae_optimizer)
 
-        step, ae_loss, summary, generated_current_frames, generated_future_frames, _, _ = self.session.run(
+        step, ae_loss, summary, _, generated_current_frames, generated_future_frames, _, _ = self.session.run(
             fetch,
             feed_dict=self.model.get_feed_dict(batch_chunk, step=step, is_train=True)
         )
