@@ -4,3 +4,4 @@
 train_dir/
 log/
 checkpoints/
+outputs/

@@ -112,8 +112,7 @@ def center_crop(x, crop_h, crop_w=None, resize_w=64):
     h, w = x.shape[:2]
     j = int(round((h - crop_h) / 2.))
     i = int(round((w - crop_w) / 2.))
-    return scipy.misc.imresize(x[j:j + crop_h, i:i + crop_w],
-                               [resize_w, resize_w])
+    return scipy.misc.imresize(x[j:j + crop_h, i:i + crop_w], [resize_w, resize_w])
 
 
 def transform(image, npx=64, is_crop=True, resize_w=64):
