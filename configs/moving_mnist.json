@@ -5,7 +5,7 @@
   "crop_height": 64,
   "crop_width": 64,
   "batch_size": 4,
-  "latent_dimension": 200,
+  "latent_dimension": 1000,
   "data_info": {
     "num_frames": 10,
     "image_height": 64,

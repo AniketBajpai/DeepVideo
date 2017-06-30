@@ -122,7 +122,8 @@ class Trainer(object):
         # )
 
         self.summary_op = tf.summary.merge_all()
-        assert_ops = tf.get_collection(key='Asserts', scope='Assert')
+
+        assert_ops = tf.get_collection('Assert', scope='assert')
         print ('Total asserts:', len(assert_ops))
         self.assert_op = tf.group(*assert_ops)
 

@@ -83,10 +83,11 @@ def conv2d(input, output_shape, is_train,
         conv = tf.nn.conv2d(input, w, strides=[1, s_h, s_w, 1], padding='SAME')
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
-        conv = lrelu(tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape()))
-        bn = tf.contrib.layers.batch_norm(conv, center=True, scale=True,
-                                          decay=0.9, is_training=is_train, updates_collections=None)
-        return bn
+        conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
+        bn = tf.contrib.layers.batch_norm(conv, center=True, scale=True, decay=0.9,
+                                          is_training=is_train, updates_collections=None)
+        out = lrelu(bn)
+        return out
 
 
 def deconv2d(input, output_shape, is_train,
@@ -97,14 +98,15 @@ def deconv2d(input, output_shape, is_train,
     with tf.variable_scope(name):
         weights = tf.get_variable('weights', [k_h, k_w, output_shape[-1], input.get_shape()[-1]],
                                   initializer=tf.random_normal_initializer(stddev=stddev))
-        deconv = tf.nn.conv2d_transpose(input, weights, output_shape=output_shape, strides=[1, s_h, s_w, 1], padding='SAME')
+        deconv = tf.nn.conv2d_transpose(input, weights, output_shape=output_shape,
+                                        strides=[1, s_h, s_w, 1], padding='SAME')
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
         deconv = tf.reshape(tf.nn.bias_add(deconv, biases), deconv.get_shape())
 
         if activation_fn == 'relu':
-            deconv = tf.nn.relu(deconv)
             deconv = tf.contrib.layers.batch_norm(deconv, center=True, scale=True,
                                                   decay=0.9, is_training=is_train, updates_collections=None)
+            deconv = tf.nn.relu(deconv)
         elif activation_fn == 'tanh':
             deconv = tf.nn.tanh(deconv)
         else:
@@ -116,7 +118,7 @@ def deconv2d(input, output_shape, is_train,
             return deconv
 
 
-def conv3d(input_, output_shape,
+def conv3d(input_, output_shape, is_train,
            k=(4, 4, 4), d=(2, 2, 2), pad=(1, 1, 1), stddev=0.01,
            name="conv3d"):
     k_t, k_h, k_w = k
@@ -129,12 +131,14 @@ def conv3d(input_, output_shape,
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
         conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
+        bn = tf.contrib.layers.batch_norm(conv, center=True, scale=True, decay=0.9,
+                                          is_training=is_train, updates_collections=None)
+        out = lrelu(bn)
+        return out
 
-        return conv
 
-
-def deconv3d(input_, output_shape,
-             k=(4, 4, 4), d=(2, 2, 2), pad=(1, 1, 1), stddev=0.01,
+def deconv3d(input_, output_shape, is_train,
+             k=(4, 4, 4), d=(2, 2, 2), pad=(1, 1, 1), stddev=0.01, activation_fn='relu',
              name="deconv3d", with_w=False):
     k_t, k_h, k_w = k
     d_t, d_h, d_w = d
@@ -149,6 +153,15 @@ def deconv3d(input_, output_shape,
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
         deconv = tf.reshape(tf.nn.bias_add(deconv, biases), output_shape)
+
+        if activation_fn == 'relu':
+            deconv = tf.contrib.layers.batch_norm(deconv, center=True, scale=True,
+                                                  decay=0.9, is_training=is_train, updates_collections=None)
+            deconv = tf.nn.relu(deconv)
+        elif activation_fn == 'tanh':
+            deconv = tf.nn.tanh(deconv)
+        else:
+            raise ValueError('Invalid activation function.')
 
         if with_w:
             return deconv, weights, biases

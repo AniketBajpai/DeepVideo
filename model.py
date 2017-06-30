@@ -29,28 +29,30 @@ class Encoder(object):
         self.is_debug = is_debug
 
         outputs = tf.convert_to_tensor(inputs)   # Check if necessary
-        tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='assert_encoder_max')
-        tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='assert_encoder_min')
+        encoder_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='assert/encoder_max')
+        encoder_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='assert/encoder_min')
+        tf.add_to_collection('Assert', encoder_max_assert_op)
+        tf.add_to_collection('Assert', encoder_min_assert_op)
 
         assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.input)
         with tf.variable_scope(self.name, reuse=self.reuse) as scope:
             print_message(scope.name)
             with tf.variable_scope('conv1') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1)
+                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l1)
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2)
+                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l2)
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3)
+                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
@@ -60,6 +62,7 @@ class Encoder(object):
                 fc_dim = reduce(mul, self.configs.conv_info.l3, 1)
                 outputs = tf.reshape(outputs, [self.batch_size] + [fc_dim], name='reshape')
                 outputs = linear(outputs, self.latent_dimension)
+                # outputs = tf.nn.tanh(outputs)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 self.net['fc_outputs'] = outputs
@@ -103,28 +106,28 @@ class Generator(object):
                 outputs_f = tf.reshape(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l1, name='reshape')
                 self.net['f_fc_outputs'] = outputs_f
             with tf.variable_scope('deconv2_f') as vscope:
-                outputs_f = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l2)
+                outputs_f = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l2, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs_f)
                 # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l2)
                 self.net['f_deconv2_outputs'] = outputs_f
             with tf.variable_scope('deconv3_f') as vscope:
-                outputs_f = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l3)
+                outputs_f = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l3, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs_f)
                 # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l3)
                 self.net['f_deconv3_outputs'] = outputs_f
             with tf.variable_scope('deconv4_fi') as vscope:
-                outputs_fi = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l4_i)
+                outputs_fi = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l4_i, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs_fi)
                 assert(outputs_fi.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4_i)
                 outputs_fi = tf.nn.tanh(outputs_fi)
                 self.net['f_deconv4i_outputs'] = outputs_fi
             with tf.variable_scope('deconv4_fm') as vscope:
-                outputs_fm = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l4_m)
+                outputs_fm = deconv3d(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l4_m, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs_fm)
                 assert(outputs_fm.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4_m)
@@ -169,8 +172,10 @@ class Generator(object):
             outputs_b = tf.reshape(outputs_b, [self.batch_size, 1] + self.configs.deconv_b_info.l4)
             outputs_b_vol = tf.tile(outputs_b, [1, self.configs.num_frames, 1, 1, 1])
             outputs = outputs_fm * outputs_fi + (1 - outputs_fm) * outputs_b_vol
-            tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='assert_generator_max')
-            tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='assert_generator_min')
+            generator_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.), [outputs], summarize=0, name='assert/generator_max')
+            generator_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.), [outputs], summarize=0, name='assert/generator_min')
+            tf.add_to_collection('Assert', generator_max_assert_op)
+            tf.add_to_collection('Assert', generator_min_assert_op)
 
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
@@ -200,19 +205,19 @@ class Discriminator(object):
         with tf.variable_scope(self.name, reuse=self.reuse) as scope:
             print_message(scope.name)
             with tf.variable_scope('conv1') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1)
+                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2)
+                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3)
+                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3, is_train=self.is_train)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
