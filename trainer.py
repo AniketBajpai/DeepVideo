@@ -2,11 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-try:
-    import better_exceptions
-except ImportError:
-    pass
-
+import better_exceptions
 import os
 from time import time, strftime
 from six.moves import xrange
@@ -84,11 +80,12 @@ class Trainer(object):
         log.warn('********* g_r_var ********** ')
         slim.model_analyzer.analyze_vars(g_r_var, print_info=True)
 
-        g_f_var = [v for v in all_vars if v.name.startswith(('Generator_F'))]
-        log.warn('********* g_f_var ********** ')
-        slim.model_analyzer.analyze_vars(g_f_var, print_info=True)
+        # g_f_var = [v for v in all_vars if v.name.startswith(('Generator_F'))]
+        # log.warn('********* g_f_var ********** ')
+        # slim.model_analyzer.analyze_vars(g_f_var, print_info=True)
 
-        ae_var = e_var + g_r_var + g_f_var
+        # ae_var = e_var + g_r_var + g_f_var
+        ae_var = e_var + g_r_var
 
         # d_var = [v for v in all_vars if v.name.startswith('Discriminator')]
         # log.warn('*************************** ')
@@ -97,9 +94,10 @@ class Trainer(object):
         # slim.model_analyzer.analyze_vars(d_var, print_info=True)
 
         # rem_var = (set(all_vars) - set(e_var) - set(g_r_var) - set(g_f_var) - set(d_var))
-        # log.warn('********* rem ********** ')
-        # print([v.name for v in rem_var])
-        # assert not rem_var
+        rem_var = (set(all_vars) - set(e_var) - set(g_r_var))
+        log.warn('********* rem ********** ')
+        print([v.name for v in rem_var])
+        assert not rem_var
 
         self.ae_optimizer = tf.contrib.layers.optimize_loss(
             loss=self.model.loss['autoencoder'],
@@ -170,12 +168,12 @@ class Trainer(object):
         log_step = self.configs.log_step
 
         for s in tqdm(xrange(max_steps)):
-            step, ae_loss, summary, step_time, generated_current_frames, generated_future_frames = self.run_single_step(
+            step, ae_loss, summary, step_time, generated_current_frames = self.run_single_step(
                 self.batch_train, step=s, is_train=True)
 
             # periodic inference
             if s % test_step == 0:
-                ae_loss_test, generated_current_frames_test, generated_future_frames_test = self.run_test(
+                ae_loss_test, generated_current_frames_test = self.run_test(
                     self.batch_test, is_train=False)
                 log.infov('Test')
                 self.log_step_message(step, ae_loss_test, step_time, is_train=False)
@@ -192,9 +190,9 @@ class Trainer(object):
                     f = h5py.File(os.path.join(self.train_dir, 'generated_current_' + str(s) + '.hy'), 'w')
                     f['generated_current_frames'] = generated_current_frames
                     f.close()
-                    f = h5py.File(os.path.join(self.train_dir, 'generated_future_' + str(s) + '.hy'), 'w')
-                    f['generated_future_frames'] = generated_future_frames
-                    f.close()
+                    # f = h5py.File(os.path.join(self.train_dir, 'generated_future_' + str(s) + '.hy'), 'w')
+                    # f['generated_future_frames'] = generated_future_frames
+                    # f.close()
 
     def run_single_step(self, batch, step=None, is_train=True):
         ''' Run a single step of training iteration on an batch '''
@@ -202,8 +200,8 @@ class Trainer(object):
 
         batch_chunk = self.session.run(batch)
 
-        fetch = [self.global_step, self.model.loss['autoencoder'], self.summary_op, self.assert_op, self.model.generated_current_frames,
-                 self.model.generated_future_frames, self.check_op]
+        fetch = [self.global_step, self.model.loss['autoencoder'], self.summary_op,
+                 self.assert_op, self.model.generated_current_frames, self.check_op]
 
         # if step % (self.config.update_rate + 1) > 0:
         #     # Train the generator
@@ -213,27 +211,27 @@ class Trainer(object):
         #     fetch.append(self.d_optimizer)
         fetch.append(self.ae_optimizer)
 
-        step, ae_loss, summary, _, generated_current_frames, generated_future_frames, _, _ = self.session.run(
+        step, ae_loss, summary, _, generated_current_frames, _, _ = self.session.run(
             fetch,
             feed_dict=self.model.get_feed_dict(batch_chunk, step=step, is_train=True)
         )
 
         _end_time = time()
 
-        return step, ae_loss, summary, (_end_time - _start_time), generated_current_frames, generated_future_frames
+        return step, ae_loss, summary, (_end_time - _start_time), generated_current_frames
 
     def run_test(self, batch, is_train=False, repeat_times=8):
         ''' Run test iteration on batch '''
 
         batch_chunk = self.session.run(batch)
         fetch = [self.global_step, self.model.loss['autoencoder'],
-                 self.model.generated_current_frames, self.model.generated_future_frames]
+                 self.model.generated_current_frames]
 
-        [step, ae_loss, generated_current_frames, generated_future_frames] = self.session.run(
+        [step, ae_loss, generated_current_frames] = self.session.run(
             fetch,
             feed_dict=self.model.get_feed_dict(batch_chunk, is_train=False))
 
-        return ae_loss, generated_current_frames, generated_future_frames
+        return ae_loss, generated_current_frames
 
     def log_step_message(self, step, ae_loss, step_time, is_train=True):
         ''' Periodic log message '''

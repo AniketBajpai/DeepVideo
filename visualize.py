@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import h5py
 import numpy as np
 import imageio
@@ -23,7 +25,7 @@ if not os.path.exists('./outputs'):
 
 
 def visualize(name):
-    for counter, file in enumerate(sorted(glob.glob(os.path.join(args.train_dir, '{}_*.hy'.format(name))), key=os.path.getmtime)[:args.n]):
+    for counter, file in enumerate(sorted(glob.glob(os.path.join(args.train_dir, '{}_*.hy'.format(name))), key=os.path.getmtime)[-args.n:]):
         print (file)
         f = h5py.File(file, 'r')
         # I = np.zeros((args.h, args.num_frames * args.w, args.c))
@@ -38,6 +40,10 @@ def visualize(name):
         if args.c == 1:
             for j in range(args.num_frames):
                 I = np.reshape(generated_frames[0, j, h_low:h_high, w_low:w_high, 0], (args.h, args.w))
+                if (I < 1.0).all() and (I > -1.0).all():
+                    print ('Image in [-1, 1]')
+                    I = ((I + 1.0) / 2 * 255).astype(np.int32)
+
                 II.append(I)
 
         else:
@@ -48,7 +54,7 @@ def visualize(name):
         # II = np.stack(II)
         output_img_path = './outputs/{}_{}_{}.png'.format(args.output_prefix, name, str(counter))
         print ('Writing image:', output_img_path)
-        print len(II), II[0].shape
+        print (len(II), II[0].shape)
         imageio.mimwrite(output_img_path, II)
 
 

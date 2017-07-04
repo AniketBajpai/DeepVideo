@@ -6,7 +6,7 @@ from __future__ import print_function
 
 # import os
 import math
-import json
+import simplejson
 import random
 import pprint
 import scipy.misc
@@ -125,7 +125,7 @@ def transform(image, npx=64, is_crop=True, resize_w=64):
 
 
 def inverse_transform(images):
-    return (images + 1.) / 2.
+    return (images + 1.) / 2. * 255
 
 # ================
 # Data handling
@@ -155,7 +155,7 @@ def objectify_dict(d):
 
 def from_json_file(filename):
     with open(filename) as data_file:
-        data = json.load(data_file)
+        data = simplejson.load(data_file)
     return objectify_dict(data)
 
 
