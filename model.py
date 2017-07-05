@@ -406,8 +406,6 @@ class Model:
 
         self.batch_size = configs.batch_size
         self.dataset_name = configs.dataset
-        self.ckpt_dir = configs.ckpt_dir
-        self.log_dir = configs.log_dir
 
         # Build model, loss, and summary
         self.build_model(is_train)
@@ -506,7 +504,7 @@ class Model:
         # Generator
         self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
         # self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
-        self.loss['autoencoder'] = self.loss['input_reconstruction_loss'] + self.loss['generator_current']
+        self.loss['autoencoder'] = self.configs.reconstruction_weight * self.loss['input_reconstruction_loss'] + self.loss['generator_current']
         # + self.loss['future_reconstruction_loss']
         # + self.loss['generator_future']
 

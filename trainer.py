@@ -149,6 +149,7 @@ class Trainer(object):
         )
         self.session = self.supervisor.prepare_or_wait_for_session(config=session_config)
 
+        self.log_dir = configs.log_dir
         self.ckpt_dir = configs.ckpt_dir
         # # Restore saved weights
         # if self.ckpt_dir is not None:

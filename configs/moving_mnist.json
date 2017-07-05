@@ -91,16 +91,17 @@
     "update_ratio": 5,
     "clip_gradients": 20.0
   },
-  "instance_noise_spread": 0.1,
+  "reconstruction_weight": 0.001,
+  "instance_noise_spread": 0.05,
   "label_noise_spread": 0.30,
-  "prefix": "autoencoder",
+  "prefix": "adversarial",
   "ckpt_dir": "./checkpoints/moving_mnist/",
   "log_dir": "./logs/moving_mnist/",
   "log_step": 20,
   "test_step": 100,
   "summaries_secs": 300,
   "checkpoint_secs": 600,
-  "output_save_step": 1000,
+  "output_save_step": 2000,
   "dump_result": 1,
   "max_steps": 1000000
 }
