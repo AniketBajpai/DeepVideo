@@ -65,7 +65,8 @@
       "k5": 4,
       "s5": 2,
       "l5": [64, 64, 1]
-    }
+    },
+    "dropout": 0.4
   },
   "configs_discriminator": {
     "conv_info": {
@@ -79,7 +80,8 @@
       "k3": 4,
       "s3": 2,
       "l3": [2, 8, 8, 256]
-    }
+    },
+    "dropout": 0.4
   },
   "learner_hyperparameters": {
     "lr_ae": 1e-4,

@@ -125,7 +125,7 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_f)
                 assert(outputs_f.get_shape().as_list() == [self.batch_size, fc_dim])
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 outputs_f = tf.reshape(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l1, name='reshape')
                 self.net['f_fc_outputs'] = outputs_f
             with tf.variable_scope('deconv2_f') as vscope:
@@ -138,7 +138,7 @@ class Generator(object):
                     k=(k2_d, k2, k2), s=(s2_d, s2, s2), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l2)
                 self.net['f_deconv2_outputs'] = outputs_f
             with tf.variable_scope('deconv3_f') as vscope:
@@ -151,7 +151,7 @@ class Generator(object):
                     k=(k3_d, k3, k3), s=(s3_d, s3, s3), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l3)
                 self.net['f_deconv3_outputs'] = outputs_f
             with tf.variable_scope('deconv4_f') as vscope:
@@ -164,7 +164,7 @@ class Generator(object):
                     k=(k4_d, k4, k4), s=(s4_d, s4, s4), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4)
                 self.net['f_deconv4_outputs'] = outputs_f
             with tf.variable_scope('deconv5_fi') as vscope:
@@ -199,7 +199,7 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size, fc_dim])
-                # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 outputs_b = tf.reshape(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l1, name='reshape')
                 self.net['b_fc_outputs'] = outputs_b
             with tf.variable_scope('deconv2_b') as vscope:
@@ -208,7 +208,7 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k2, s=self.configs.deconv_f_info.s2, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l2)
                 self.net['b_deconv2_outputs'] = outputs_b
             with tf.variable_scope('deconv3_b') as vscope:
@@ -217,7 +217,7 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k3, s=self.configs.deconv_f_info.s3, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l3)
                 self.net['b_deconv3_outputs'] = outputs_b
             with tf.variable_scope('deconv4_b') as vscope:
@@ -226,6 +226,7 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k4, s=self.configs.deconv_f_info.s4, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l4)
                 self.net['b_deconv4_outputs'] = outputs_b
             with tf.variable_scope('deconv5_b') as vscope:
@@ -323,7 +324,7 @@ class Discriminator(object):
                     k=self.configs.conv_info.k1, s=self.configs.conv_info.s1, with_w=True)
                 if is_debug:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l1)
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
@@ -332,7 +333,7 @@ class Discriminator(object):
                     k=self.configs.conv_info.k2, s=self.configs.conv_info.s2, with_w=True)
                 if is_debug:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l2)
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
@@ -341,7 +342,7 @@ class Discriminator(object):
                     k=self.configs.conv_info.k3, s=self.configs.conv_info.s3, with_w=True)
                 if is_debug:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='dropout')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l3)
                 self.net['conv3_outputs'] = outputs
             with tf.variable_scope('fc') as vscope:
