@@ -486,9 +486,15 @@ class Model:
         # self.loss['future_reconstruction_loss'] = self.loss['future_reconstruction_loss_mse']
 
         # Adversarial loss
-        label_real_current = tf.zeros([self.batch_size, 1])
+
+        # Label smoothing
+        label_spread = self.configs.label_spread
+        mean_real = label_spread / 2.0
+        mean_fake = (1.0 + label_spread) / 2.0
+        stddev_real = stddev_fake = label_spread / 2.0
+        label_real_current = tf.random_normal([self.batch_size, 1], mean=mean_real, stddev=stddev_real)
         # label_real_future = tf.zeros([self.batch_size, 1])
-        label_fake_current = tf.ones([self.batch_size, 1])
+        label_fake_current = tf.random_normal([self.batch_size, 1], mean=mean_fake, stddev=stddev_fake)
         # label_fake_future = tf.ones([self.batch_size, 1])
 
         # Generator
