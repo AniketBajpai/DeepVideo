@@ -298,49 +298,77 @@ class Discriminator(object):
         self.name = name
         self.configs = configs_discriminator
         self.batch_size = configs_discriminator.batch_size
-        self.reuse = False
         self.net = {}
 
-    def __call__(self, inputs, is_train=True, is_debug=False):
+    def __call__(self, inputs, reuse, is_train=True, is_debug=False):
         self.is_train = is_train
         self.is_debug = is_debug
 
-        outputs = tf.convert_to_tensor(inputs)   # Check if necessary
-        # assert input shape
-        with tf.variable_scope(self.name, reuse=self.reuse) as scope:
+        inputs = tf.convert_to_tensor(inputs)   # Check if necessary
+
+        # Assert that input is in [-1, 1]
+        discriminator_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(inputs), 1.), [
+                                                inputs], summarize=0, name='assert/discriminator_max')
+        discriminator_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(
+            inputs), -1.), [inputs], summarize=0, name='assert/discriminator_min')
+        tf.add_to_collection('Assert', discriminator_max_assert_op)
+        tf.add_to_collection('Assert', discriminator_min_assert_op)
+
+        assert(inputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.input)
+        with tf.variable_scope(self.name, reuse=reuse) as scope:
             print_message(scope.name)
             with tf.variable_scope('conv1') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l1,
-                                 is_train=self.is_train, with_w=True)
-                if is_debug and not self.reuse:
+                outputs, self.net['w1'], self.net['b1'] = conv3d(
+                    inputs, [self.batch_size] + self.configs.conv_info.l1, is_train=self.is_train,
+                    k=self.configs.conv_info.k1, s=self.configs.conv_info.s1, with_w=True)
+                if is_debug:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l1)
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2,
-                                 is_train=self.is_train, with_w=True)
-                if is_debug and not self.reuse:
+                outputs, self.net['w2'], self.net['b2'] = conv3d(
+                    outputs, [self.batch_size] + self.configs.conv_info.l2, is_train=self.is_train,
+                    k=self.configs.conv_info.k2, s=self.configs.conv_info.s2, with_w=True)
+                if is_debug:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l2)
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
-                outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3,
-                                 is_train=self.is_train, with_w=True)
-                if is_debug and not self.reuse:
+                outputs, self.net['w3'], self.net['b3'] = conv3d(
+                    outputs, [self.batch_size] + self.configs.conv_info.l3, is_train=self.is_train,
+                    k=self.configs.conv_info.k3, s=self.configs.conv_info.s3, with_w=True)
+                if is_debug:
                     print(vscope.name, outputs)
                 # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l3)
                 self.net['conv3_outputs'] = outputs
             with tf.variable_scope('fc') as vscope:
                 fc_dim = reduce(mul, self.configs.conv_info.l3, 1)
                 outputs = tf.reshape(outputs, [self.batch_size] + [fc_dim], name='reshape')
                 outputs = linear(outputs, 1)
-                if is_debug and not self.reuse:
+                if is_debug:
                     print(vscope.name, outputs)
                 self.net['fc_outputs'] = outputs
 
-        self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
         return tf.nn.sigmoid(outputs), outputs
+
+    def build_summary(self):
+        # Distribution of encoder activations
+        tf.summary.histogram('discriminator/conv1_outputs', self.net['conv1_outputs'])
+        tf.summary.histogram('discriminator/conv2_outputs', self.net['conv2_outputs'])
+        tf.summary.histogram('discriminator/conv3_outputs', self.net['conv3_outputs'])
+
+        # Encoder weights, biases
+        tf.summary.scalar('discriminator/w1', tf.norm(self.net['w1']))
+        tf.summary.scalar('discriminator/w2', tf.norm(self.net['w2']))
+        tf.summary.scalar('discriminator/w3', tf.norm(self.net['w3']))
+
+        tf.summary.scalar('discriminator/b1', tf.norm(self.net['b1']))
+        tf.summary.scalar('discriminator/b2', tf.norm(self.net['b2']))
+        tf.summary.scalar('discriminator/b3', tf.norm(self.net['b3']))
 
 
 class Model:
@@ -353,7 +381,7 @@ class Model:
         # Model info
         self.configs_encoder = configs.configs_encoder
         self.configs_generator = configs.configs_generator
-        # self.configs_discriminator = configs.configs_discriminator
+        self.configs_discriminator = configs.configs_discriminator
 
         self.configs_encoder.batch_size = configs.batch_size
         self.configs_encoder.num_frames = configs.data_info.num_frames
@@ -361,7 +389,7 @@ class Model:
         self.configs_generator.batch_size = configs.batch_size
         self.configs_generator.num_frames = configs.data_info.num_frames
         self.configs_generator.latent_dimension = configs.latent_dimension
-        # self.configs_discriminator.batch_size = configs.batch_size
+        self.configs_discriminator.batch_size = configs.batch_size
 
         # Data info
         self.num_frames = configs.data_info.num_frames
@@ -372,7 +400,7 @@ class Model:
 
         self.latent_dimension = configs.latent_dimension
         self.lr_ae = configs.learner_hyperparameters.lr_ae
-        # self.lr_d = configs.learner_hyperparameters.lr_d
+        self.lr_d = configs.learner_hyperparameters.lr_d
         self.beta1 = configs.learner_hyperparameters.beta1
 
         self.batch_size = configs.batch_size
@@ -407,10 +435,10 @@ class Model:
             name='current_frames', dtype=tf.float32,
             shape=[self.batch_size, self.num_frames, self.image_height, self.image_width, self.num_channels]
         )
-        self.future_frames = tf.placeholder(
-            name='future_frames', dtype=tf.float32,
-            shape=[self.batch_size, self.num_frames, self.image_height, self.image_width, self.num_channels]
-        )
+        # self.future_frames = tf.placeholder(
+        #     name='future_frames', dtype=tf.float32,
+        #     shape=[self.batch_size, self.num_frames, self.image_height, self.image_width, self.num_channels]
+        # )
         # self.label = tf.placeholder(
         #     name='label', dtype=tf.float32, shape=[self.batch_size, self.num_classes]
         # )
@@ -428,13 +456,17 @@ class Model:
         self.generated_current_frames = self.Gr(self.z, is_debug=self.is_debug)
         # self.generated_future_frames = self.Gf(self.z, is_debug=self.is_debug)
 
-        # # Discriminators
-        # self.D = Discriminator('Discriminator', self.configs_discriminator)
-        #
-        # self.D_real_current, self.D_real_current_logits = self.D(self.current_frames, is_debug=self.is_debug)
-        # self.D_fake_current, self.D_fake_current_logits = self.D(self.generated_current_frames, is_debug=self.is_debug)
+        # Discriminators
+        self.D = Discriminator('Discriminator', self.configs_discriminator)
+
+        self.D_real_current, self.D_real_current_logits = self.D(
+            self.current_frames, reuse=False, is_debug=self.is_debug)
+        self.D_fake_current, self.D_fake_current_logits = self.D(
+            self.generated_current_frames, reuse=True, is_debug=self.is_debug)
         # self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
         # self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
+
+        self.all_predictions = self.D_fake_current
 
         print_message('Successfully loaded the model')
 
@@ -453,29 +485,28 @@ class Model:
         self.loss['input_reconstruction_loss'] = self.loss['input_reconstruction_loss_mse']
         # self.loss['future_reconstruction_loss'] = self.loss['future_reconstruction_loss_mse']
 
-        # # Adversarial loss
-        # label_real_current = tf.zeros([self.batch_size, 1])
+        # Adversarial loss
+        label_real_current = tf.zeros([self.batch_size, 1])
         # label_real_future = tf.zeros([self.batch_size, 1])
-        # label_fake_current = tf.ones([self.batch_size, 1])
+        label_fake_current = tf.ones([self.batch_size, 1])
         # label_fake_future = tf.ones([self.batch_size, 1])
 
         # Generator
-        # self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
+        self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
         # self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
-        self.loss['autoencoder'] = self.loss['input_reconstruction_loss']  # + self.loss['future_reconstruction_loss']
-        #  + self.loss['generator_current'] + self.loss['generator_future']
+        self.loss['autoencoder'] = self.loss['input_reconstruction_loss'] + self.loss['generator_current']
+        # + self.loss['future_reconstruction_loss']
+        # + self.loss['generator_future']
 
-        # # Discriminator adversarial loss
-        # self.loss['discriminator_real_current'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_real_current, label_real_current))
-        # self.loss['discriminator_fake_current'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_fake_current, label_fake_current))
-        # self.loss['discriminator_real_future'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_real_future, label_real_future))
-        # self.loss['discriminator_fake_future'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_fake_future, label_fake_future))
-        # self.loss['discriminator'] = self.loss['discriminator_real_current'] + self.loss['discriminator_fake_current'] + \
-        #     self.loss['discriminator_fake_current'] + self.loss['discriminator_fake_future']
+        # Discriminator adversarial loss
+        self.loss['discriminator_real_current'] = tf.reduce_mean(
+            tf.nn.sigmoid_cross_entropy_with_logits(labels=label_real_current, logits=self.D_real_current_logits))
+        self.loss['discriminator_fake_current'] = tf.reduce_mean(
+            tf.nn.sigmoid_cross_entropy_with_logits(labels=label_fake_current, logits=self.D_fake_current_logits))
+        # Add disciminator terms for future_frames
+        self.loss['discriminator'] = self.loss['discriminator_real_current'] + self.loss['discriminator_fake_current']
+        # + self.loss['discriminator_real_future']
+        # + self.loss['discriminator_fake_future']
 
         # # Classification accuracy - for supervised
         # self.accuracy
@@ -493,10 +524,18 @@ class Model:
         self.Gr.build_summary('current')
         # self.Gf.build_summary('future')
 
+        # Build discriminator summary
+        self.D.build_summary()
+
         # Loss summary
         tf.summary.scalar('loss/input_reconstruction_loss', self.loss['input_reconstruction_loss'])
         # tf.summary.scalar('loss/future_reconstruction_loss', self.loss['future_reconstruction_loss'])
+        tf.summary.scalar('loss/generator_current', self.loss['generator_current'])
         tf.summary.scalar('loss/autoencoder', self.loss['autoencoder'])
+
+        tf.summary.scalar('loss/discriminator_real_current', self.loss['discriminator_real_current'])
+        tf.summary.scalar('loss/discriminator_fake_current', self.loss['discriminator_fake_current'])
+        tf.summary.scalar('loss/discriminator', self.loss['discriminator'])
 
         # Input data summary
         input_current_summary = tf.reshape(self.current_frames,
@@ -506,6 +545,7 @@ class Model:
         #                                   (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
         # tf.summary.image('input/future', input_future_summary)
 
+        # TODO: refactor inside generator summary
         # Generated data summary
         generated_current_summary = tf.reshape(self.generated_current_frames,
                                                (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
@@ -513,3 +553,9 @@ class Model:
         # generated_future_summary = tf.reshape(self.generated_future_frames,
         #                                       (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
         # tf.summary.image('generated/future', generated_future_summary)
+
+        # Label summary
+        tf.summary.scalar('label/real_current', tf.reduce_mean(self.D_real_current))
+        tf.summary.scalar('label/fake_current', tf.reduce_mean(self.D_fake_current))
+        tf.summary.image('label/pred_real_current', tf.reshape(self.D_real_current, [1, self.batch_size, 1, 1]))
+        tf.summary.image('label/pred_fake_current', tf.reshape(self.D_fake_current, [1, self.batch_size, 1, 1]))

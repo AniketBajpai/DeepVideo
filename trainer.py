@@ -19,16 +19,12 @@ from model import Model
 class Trainer(object):
     def __init__(self, configs, dataset_train, dataset_test):
         self.configs = configs
-        hyperparameter_str = '{}_lr_{}'.format(
+        hyperparameter_str = '{}_lr_{}_update_G{}_D{}'.format(
             configs.dataset,
             str(configs.learner_hyperparameters.lr_ae),
+            str(configs.learner_hyperparameters.update_ratio),
+            str(1)
         )
-        # hyperparameter_str = '{}_lr_{}_update_G{}_D{}'.format(
-        #     configs.dataset,
-        #     str(configs.learner_hyperparameters.learning_rate),
-        #     str(configs.learner_hyperparameters.update_ratio),
-        #     str(1)
-        # )
         self.train_dir = '{}/train_dir/{}-{}-{}'.format(
             configs.home_dir,
             configs.prefix,
@@ -52,6 +48,7 @@ class Trainer(object):
         # ------------------ optimizer ------------------ #
         self.global_step = tf.contrib.framework.get_or_create_global_step(graph=None)
         self.lr_ae = configs.learner_hyperparameters.lr_ae
+        self.lr_d = configs.learner_hyperparameters.lr_d
 
         # weight decay
         # if configs.learner_hyperparameters.lr_weight_decay:
@@ -87,14 +84,14 @@ class Trainer(object):
         # ae_var = e_var + g_r_var + g_f_var
         ae_var = e_var + g_r_var
 
-        # d_var = [v for v in all_vars if v.name.startswith('Discriminator')]
-        # log.warn('*************************** ')
-        # log.warn('********* d_var ********** ')
-        # log.warn('*************************** ')
-        # slim.model_analyzer.analyze_vars(d_var, print_info=True)
+        d_var = [v for v in all_vars if v.name.startswith('Discriminator')]
+        log.warn('*************************** ')
+        log.warn('********* d_var ********** ')
+        log.warn('*************************** ')
+        slim.model_analyzer.analyze_vars(d_var, print_info=True)
 
         # rem_var = (set(all_vars) - set(e_var) - set(g_r_var) - set(g_f_var) - set(d_var))
-        rem_var = (set(all_vars) - set(e_var) - set(g_r_var))
+        rem_var = (set(all_vars) - set(e_var) - set(g_r_var) - set(d_var))
         log.warn('********* rem ********** ')
         print([v.name for v in rem_var])
         assert not rem_var
@@ -109,15 +106,16 @@ class Trainer(object):
             variables=ae_var
         )
 
-        # self.d_optimizer = tf.contrib.layers.optimize_loss(
-        #     loss=self.model.loss['discriminator'],
-        #     global_step=self.global_step,
-        #     learning_rate=self.learner_hyperparameters.lr_d,
-        #     optimizer=tf.train.AdamOptimizer(beta1=configs.beta1),
-        #     clip_gradients=configs.clip_gradients,
-        #     name='d_optimize_loss',
-        #     variables=d_var
-        # )
+        self.d_optimizer = tf.contrib.layers.optimize_loss(
+            loss=self.model.loss['discriminator'],
+            global_step=self.global_step,
+            learning_rate=configs.learner_hyperparameters.lr_d,
+            optimizer=tf.train.GradientDescentOptimizer(),
+            # optimizer=tf.train.AdamOptimizer(beta1=configs.learner_hyperparameters.beta1),
+            clip_gradients=configs.learner_hyperparameters.clip_gradients,
+            name='d_optimize_loss',
+            variables=d_var
+        )
 
         self.summary_op = tf.summary.merge_all()
 
@@ -168,20 +166,19 @@ class Trainer(object):
         log_step = self.configs.log_step
 
         for s in tqdm(xrange(max_steps)):
-            step, ae_loss, summary, step_time, generated_current_frames = self.run_single_step(
+            step, ae_loss, g_loss, d_loss, summary, step_time, generated_current_frames, all_predicitons = self.run_single_step(
                 self.batch_train, step=s, is_train=True)
 
             # periodic inference
             if s % test_step == 0:
-                ae_loss_test, generated_current_frames_test = self.run_test(
+                ae_loss_test, g_loss_test, d_loss_test, generated_current_frames_test, all_predicitons = self.run_test(
                     self.batch_test, is_train=False)
                 log.infov('Test')
-                self.log_step_message(step, ae_loss_test, step_time, is_train=False)
+                self.log_step_message(step, ae_loss_test, g_loss_test, d_loss_test, step_time, is_train=False)
 
             if s % log_step == 0:
-                self.log_step_message(step, ae_loss, step_time)
-
-            self.summary_writer.add_summary(summary, global_step=step)
+                self.log_step_message(step, ae_loss, g_loss_test, d_loss_test, step_time)
+                self.summary_writer.add_summary(summary, global_step=step)
 
             if s % output_save_step == 0:
                 log.infov('Saved checkpoint at %d', s)
@@ -200,40 +197,39 @@ class Trainer(object):
 
         batch_chunk = self.session.run(batch)
 
-        fetch = [self.global_step, self.model.loss['autoencoder'], self.summary_op,
-                 self.assert_op, self.model.generated_current_frames, self.check_op]
+        fetch = [self.global_step, self.model.loss['autoencoder'], self.model.loss['generator_current'], self.model.loss['discriminator'],
+                 self.summary_op, self.assert_op, self.model.generated_current_frames, self.model.all_predictions, self.check_op]
 
-        # if step % (self.config.update_rate + 1) > 0:
-        #     # Train the generator
-        #     fetch.append(self.g_optimizer)
-        # else:
-        #     # Train the discriminator
-        #     fetch.append(self.d_optimizer)
-        fetch.append(self.ae_optimizer)
+        if step % (self.configs.learner_hyperparameters.update_ratio + 1) > 0:
+            # Train the generator
+            fetch.append(self.ae_optimizer)
+        else:
+            # Train the discriminator
+            fetch.append(self.d_optimizer)
 
-        step, ae_loss, summary, _, generated_current_frames, _, _ = self.session.run(
+        step, ae_loss, g_loss, d_loss, summary, _, generated_current_frames, all_predictions, _, _ = self.session.run(
             fetch,
             feed_dict=self.model.get_feed_dict(batch_chunk, step=step, is_train=True)
         )
 
         _end_time = time()
 
-        return step, ae_loss, summary, (_end_time - _start_time), generated_current_frames
+        return step, ae_loss, g_loss, d_loss, summary, (_end_time - _start_time), generated_current_frames, all_predictions
 
     def run_test(self, batch, is_train=False, repeat_times=8):
         ''' Run test iteration on batch '''
 
         batch_chunk = self.session.run(batch)
-        fetch = [self.global_step, self.model.loss['autoencoder'],
-                 self.model.generated_current_frames]
+        fetch = [self.global_step, self.model.loss['autoencoder'], self.model.loss['generator_current'], self.model.loss['discriminator'],
+                 self.model.generated_current_frames, self.model.all_predictions]
 
-        [step, ae_loss, generated_current_frames] = self.session.run(
+        [step, ae_loss, g_loss, d_loss, generated_current_frames, all_predictions] = self.session.run(
             fetch,
             feed_dict=self.model.get_feed_dict(batch_chunk, is_train=False))
 
-        return ae_loss, generated_current_frames
+        return ae_loss, g_loss, d_loss, generated_current_frames, all_predictions
 
-    def log_step_message(self, step, ae_loss, step_time, is_train=True):
+    def log_step_message(self, step, ae_loss, g_loss, d_loss, step_time, is_train=True):
         ''' Periodic log message '''
         if step_time == 0:
             step_time = 0.001
@@ -241,8 +237,8 @@ class Trainer(object):
         log_fn((' [{split_mode:5s} step {step:4d}] ' +
                 'AE loss: {ae_loss:.5f} ' +
                 # 'Supervised loss: {s_loss:.5f} ' +
-                # 'D loss: {d_loss:.5f} ' +
-                # 'G loss: {g_loss:.5f} ' +
+                'G loss: {g_loss:.5f} ' +
+                'D loss: {d_loss:.5f} ' +
                 # 'Accuracy: {accuracy:.5f} '
                 # 'test loss: {test_loss:.5f} ' +
                 '({sec_per_batch:.3f} sec/batch, {instance_per_sec:.3f} instances/sec) '
@@ -250,8 +246,8 @@ class Trainer(object):
                          step=step,
                          ae_loss=ae_loss,
                          #  s_loss=s_loss,
-                         #  d_loss=d_loss,
-                         #  g_loss=g_loss,
+                         g_loss=g_loss,
+                         d_loss=d_loss,
                          #  accuracy=accuracy,
                          #  test_loss=accuracy_test,
                          sec_per_batch=step_time,
@@ -280,7 +276,7 @@ def main():
     dataset_train, dataset_test = dataset.create_default_splits(configs)
     trainer = Trainer(configs, dataset_train, dataset_test)
 
-    log.warning('dataset: %s, learning_rate: %f', configs.dataset, configs.learner_hyperparameters.lr_ae)
+    log.warning('dataset: %s, ae learning_rate: %f', configs.dataset, configs.learner_hyperparameters.lr_ae)
     trainer.train()
 
 

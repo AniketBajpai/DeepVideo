@@ -70,8 +70,14 @@
   "configs_discriminator": {
     "conv_info": {
       "input": [10, 64, 64, 1],
+      "k1": 4,
+      "s1": 2,
       "l1": [5, 32, 32, 64],
+      "k2": 4,
+      "s2": 2,
       "l2": [3, 16, 16, 128],
+      "k3": 4,
+      "s3": 2,
       "l3": [2, 8, 8, 256]
     }
   },
@@ -81,12 +87,13 @@
     "beta1": 0.5,
     "lr_weight_decay": 1,
     "update_ratio": 5,
-    "clip_gradients": 50.0
+    "clip_gradients": 20.0
   },
+  "label_spread": 0.30,
   "prefix": "autoencoder",
   "ckpt_dir": "./checkpoints/moving_mnist/",
   "log_dir": "./logs/moving_mnist/",
-  "log_step": 10,
+  "log_step": 20,
   "test_step": 100,
   "summaries_secs": 300,
   "checkpoint_secs": 600,
