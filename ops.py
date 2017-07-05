@@ -52,6 +52,12 @@ def binary_cross_entropy(preds, targets, name=None):
 # ==================================
 
 
+def add_gaussian_noise(input_, std):
+    ''' Add gaussian noise with stddev=std to input '''
+    noise = tf.random_normal(shape=tf.shape(input_), mean=0.0, stddev=std, dtype=tf.float32)
+    return input_ + noise
+
+
 def linear(input_, output_size, name='linear', stddev=0.01, bias_start=0.0, with_w=False):
     shape = input_.get_shape().as_list()
 

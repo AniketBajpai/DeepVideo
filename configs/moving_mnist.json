@@ -89,7 +89,8 @@
     "update_ratio": 5,
     "clip_gradients": 20.0
   },
-  "label_spread": 0.30,
+  "instance_noise_spread": 0.1,
+  "label_noise_spread": 0.30,
   "prefix": "autoencoder",
   "ckpt_dir": "./checkpoints/moving_mnist/",
   "log_dir": "./logs/moving_mnist/",

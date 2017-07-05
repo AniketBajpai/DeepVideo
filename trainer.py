@@ -100,7 +100,8 @@ class Trainer(object):
             loss=self.model.loss['autoencoder'],
             global_step=self.global_step,
             learning_rate=configs.learner_hyperparameters.lr_ae,
-            optimizer=tf.train.AdamOptimizer(beta1=configs.learner_hyperparameters.beta1),
+            optimizer=tf.train.AdamOptimizer(learning_rate=configs.learner_hyperparameters.lr_ae,
+                                             beta1=configs.learner_hyperparameters.beta1),
             clip_gradients=configs.learner_hyperparameters.clip_gradients,
             name='ae_optimize_loss',
             variables=ae_var
@@ -110,8 +111,8 @@ class Trainer(object):
             loss=self.model.loss['discriminator'],
             global_step=self.global_step,
             learning_rate=configs.learner_hyperparameters.lr_d,
-            optimizer=tf.train.GradientDescentOptimizer(),
-            # optimizer=tf.train.AdamOptimizer(beta1=configs.learner_hyperparameters.beta1),
+            optimizer=tf.train.AdamOptimizer(learning_rate=configs.learner_hyperparameters.lr_d,
+                                             beta1=configs.learner_hyperparameters.beta1),
             clip_gradients=configs.learner_hyperparameters.clip_gradients,
             name='d_optimize_loss',
             variables=d_var

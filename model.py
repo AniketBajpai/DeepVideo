@@ -5,7 +5,7 @@ from __future__ import print_function
 import tensorflow as tf
 from operator import mul
 
-from ops import conv3d, deconv2d, deconv3d, linear
+from ops import conv3d, deconv2d, deconv3d, linear, add_gaussian_noise
 from utils import print_message
 
 
@@ -306,13 +306,13 @@ class Discriminator(object):
 
         inputs = tf.convert_to_tensor(inputs)   # Check if necessary
 
-        # Assert that input is in [-1, 1]
-        discriminator_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(inputs), 1.), [
-                                                inputs], summarize=0, name='assert/discriminator_max')
-        discriminator_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(
-            inputs), -1.), [inputs], summarize=0, name='assert/discriminator_min')
-        tf.add_to_collection('Assert', discriminator_max_assert_op)
-        tf.add_to_collection('Assert', discriminator_min_assert_op)
+        # Assert that input is in [-1, 1] - removed due to instance noise
+        # discriminator_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(inputs), 1.), [
+        #                                         inputs], summarize=0, name='assert/discriminator_max')
+        # discriminator_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(
+        #     inputs), -1.), [inputs], summarize=0, name='assert/discriminator_min')
+        # tf.add_to_collection('Assert', discriminator_max_assert_op)
+        # tf.add_to_collection('Assert', discriminator_min_assert_op)
 
         assert(inputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.input)
         with tf.variable_scope(self.name, reuse=reuse) as scope:
@@ -456,13 +456,18 @@ class Model:
         self.generated_current_frames = self.Gr(self.z, is_debug=self.is_debug)
         # self.generated_future_frames = self.Gf(self.z, is_debug=self.is_debug)
 
+        # Add instance noise
+        instance_noise_spread = self.configs.instance_noise_spread
+        self.generated_current_frames_noisy = add_gaussian_noise(self.generated_current_frames, instance_noise_spread)
+        self.current_frames_noisy = add_gaussian_noise(self.generated_current_frames, instance_noise_spread)
+
         # Discriminators
         self.D = Discriminator('Discriminator', self.configs_discriminator)
 
         self.D_real_current, self.D_real_current_logits = self.D(
-            self.current_frames, reuse=False, is_debug=self.is_debug)
+            self.current_frames_noisy, reuse=False, is_debug=self.is_debug)
         self.D_fake_current, self.D_fake_current_logits = self.D(
-            self.generated_current_frames, reuse=True, is_debug=self.is_debug)
+            self.generated_current_frames_noisy, reuse=True, is_debug=self.is_debug)
         # self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
         # self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
 
@@ -488,13 +493,13 @@ class Model:
         # Adversarial loss
 
         # Label smoothing
-        label_spread = self.configs.label_spread
-        mean_real = label_spread / 2.0
-        mean_fake = (1.0 + label_spread) / 2.0
-        stddev_real = stddev_fake = label_spread / 2.0
-        label_real_current = tf.random_normal([self.batch_size, 1], mean=mean_real, stddev=stddev_real)
+        label_noise_spread = self.configs.label_noise_spread
+        mean_real = label_noise_spread / 2.0
+        mean_fake = (1.0 + label_noise_spread) / 2.0
+        stddev_real = stddev_fake = label_noise_spread / 2.0
+        label_real_current = tf.random_normal([self.batch_size, 1], mean=mean_real, stddev=stddev_real, dtype=tf.float32)
         # label_real_future = tf.zeros([self.batch_size, 1])
-        label_fake_current = tf.random_normal([self.batch_size, 1], mean=mean_fake, stddev=stddev_fake)
+        label_fake_current = tf.random_normal([self.batch_size, 1], mean=mean_fake, stddev=stddev_fake, dtype=tf.float32)
         # label_fake_future = tf.ones([self.batch_size, 1])
 
         # Generator
