@@ -63,7 +63,7 @@ def linear(input_, output_size, name='linear', stddev=0.01, bias_start=0.0, with
 
     with tf.variable_scope(name):
         matrix = tf.get_variable('Matrix', [shape[1], output_size], tf.float32,
-                                 tf.random_normal_initializer(stddev=stddev))
+                                 tf.contrib.layers.xavier_initializer(uniform=False))
         bias = tf.get_variable('bias', [output_size], initializer=tf.constant_initializer(bias_start))
         if with_w:
             return tf.matmul(input_, matrix) + bias, matrix, bias
@@ -85,7 +85,7 @@ def conv2d(input_, output_shape, is_train,
     s_h = s_w = s
     with tf.variable_scope(name):
         weights = tf.get_variable('weights', [k_h, k_w, input_.get_shape()[-1], output_shape[-1]],
-                                  initializer=tf.truncated_normal_initializer(stddev=stddev))
+                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         conv = tf.nn.conv2d(input_, weights, strides=[1, s_h, s_w, 1], padding='SAME')
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
@@ -106,7 +106,7 @@ def deconv2d(input_, output_shape, is_train,
     s_h = s_w = s
     with tf.variable_scope(name):
         weights = tf.get_variable('weights', [k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
-                                  initializer=tf.random_normal_initializer(stddev=stddev))
+                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         deconv = tf.nn.conv2d_transpose(input_, weights, output_shape=output_shape,
                                         strides=[1, s_h, s_w, 1], padding='SAME')
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
@@ -136,7 +136,7 @@ def conv3d(input_, output_shape, is_train,
     s_d = s_h = s_w = s
     with tf.variable_scope(name):
         weights = tf.get_variable('weights', [k_d, k_h, k_w, input_.get_shape()[-1], output_shape[-1]],
-                                  initializer=tf.truncated_normal_initializer(stddev=stddev))
+                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
         conv = tf.nn.conv3d(input_, weights, strides=[1, s_d, s_h, s_w, 1], padding='SAME')
 
         biases = tf.get_variable('biases', [output_shape[-1]], initializer=tf.constant_initializer(0.0))
@@ -159,7 +159,7 @@ def deconv3d(input_, output_shape, is_train,
     with tf.variable_scope(name):
         # filter : [height, width, output_channels, in_channels]
         weights = tf.get_variable('weights', [k_d, k_h, k_w, output_shape[-1], input_.get_shape()[-1]],
-                                  initializer=tf.random_normal_initializer(stddev=stddev))
+                                  initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
         deconv = tf.nn.conv3d_transpose(input_, weights, output_shape=output_shape,
                                         strides=[1, s_d, s_h, s_w, 1], padding=padding)
