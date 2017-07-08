@@ -83,6 +83,8 @@ class DataLoader(object):
 def load_configs(config_filename=None):
     if config_filename is None:
         config_filename = os.path.join(os.path.abspath('.'), 'configs', 'moving_mnist.json')
+    else:
+        config_filename = os.path.join(os.path.abspath('.'), 'configs', config_filename)
     print ('Config file:', config_filename)
     configs = from_json_file(config_filename)
     return configs

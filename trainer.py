@@ -77,12 +77,11 @@ class Trainer(object):
         log.warn('********* g_r_var ********** ')
         slim.model_analyzer.analyze_vars(g_r_var, print_info=True)
 
-        # g_f_var = [v for v in all_vars if v.name.startswith(('Generator_F'))]
-        # log.warn('********* g_f_var ********** ')
-        # slim.model_analyzer.analyze_vars(g_f_var, print_info=True)
+        g_f_var = [v for v in all_vars if v.name.startswith(('Generator_F'))]
+        log.warn('********* g_f_var ********** ')
+        slim.model_analyzer.analyze_vars(g_f_var, print_info=True)
 
-        # ae_var = e_var + g_r_var + g_f_var
-        ae_var = e_var + g_r_var
+        ae_var = e_var + g_r_var + g_f_var
 
         d_var = [v for v in all_vars if v.name.startswith('Discriminator')]
         log.warn('*************************** ')
@@ -263,7 +262,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='moving_mnist',
                         choices=['moving_mnist', 'yfcc100m/golf', 'yfcc100m/beach'])
+    parser.add_argument('--config_file', type=str)
+    parser.add_argument('--gpu', type=int, default=0)
     args = parser.parse_args()
+
+    gpu_id = args.gpu
+    available_devices = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
+    print ('Choosing gpu', gpu_id)
+    os.environ['CUDA_VISIBLE_DEVICES'] = available_devices[gpu_id]
 
     if args.dataset == 'moving_mnist':
         import datasets.moving_mnist as dataset
@@ -274,7 +280,7 @@ def main():
     else:
         raise ValueError(args.dataset)
 
-    configs = dataset.load_configs()
+    configs = dataset.load_configs(args.config_file)
     dataset_train, dataset_test = dataset.create_default_splits(configs)
     trainer = Trainer(configs, dataset_train, dataset_test)
 

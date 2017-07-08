@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 from operator import mul
 
@@ -420,6 +421,9 @@ class Model:
             # self.label: batch_chunk['label'],
         }
 
+        # latent variable - (-1, 1 chosen as encoder has relu activation)
+        fd[self.z] = np.random.uniform(-1, 1, [self.batch_size, self.latent_dimension]).astype(np.float32)
+
         # TODO: add weight annealing
 
         fd[self.is_train] = is_train
@@ -445,8 +449,9 @@ class Model:
         self.is_train = tf.placeholder_with_default(bool(is_train), [], name='is_train')
 
         # Encoder
-        self.E = Encoder('Encoder', self.configs_encoder)
-        self.z = self.E(self.current_frames, is_debug=self.is_debug)
+        # self.E = Encoder('Encoder', self.configs_encoder)
+        # self.z = self.E(self.current_frames, is_debug=self.is_debug)
+        self.z = tf.placeholder(tf.float32, [self.batch_size, self.latent_dimension], name='z')
 
         # Generators
         self.Gr = Generator('Generator_R', self.configs_generator)
@@ -455,18 +460,18 @@ class Model:
         self.generated_current_frames = self.Gr(self.z, is_debug=self.is_debug)
         # self.generated_future_frames = self.Gf(self.z, is_debug=self.is_debug)
 
-        # Add instance noise
-        instance_noise_spread = self.configs.instance_noise_spread
-        self.generated_current_frames_noisy = add_gaussian_noise(self.generated_current_frames, instance_noise_spread)
-        self.current_frames_noisy = add_gaussian_noise(self.generated_current_frames, instance_noise_spread)
+        # # Add instance noise
+        # instance_noise_spread = self.configs.instance_noise_spread
+        # self.generated_current_frames_noisy = add_gaussian_noise(self.generated_current_frames, instance_noise_spread)
+        # self.current_frames_noisy = add_gaussian_noise(self.generated_current_frames, instance_noise_spread)
 
         # Discriminators
         self.D = Discriminator('Discriminator', self.configs_discriminator)
 
         self.D_real_current, self.D_real_current_logits = self.D(
-            self.current_frames_noisy, reuse=False, is_debug=self.is_debug)
+            self.current_frames, reuse=False, is_debug=self.is_debug)
         self.D_fake_current, self.D_fake_current_logits = self.D(
-            self.generated_current_frames_noisy, reuse=True, is_debug=self.is_debug)
+            self.generated_current_frames, reuse=True, is_debug=self.is_debug)
         # self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
         # self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
 
@@ -481,12 +486,12 @@ class Model:
         # Reconstruction loss
 
         # L2 loss
-        self.loss['input_reconstruction_loss_mse'] = tf.reduce_mean(
-            tf.nn.l2_loss(self.generated_current_frames - self.current_frames))
+        # self.loss['input_reconstruction_loss_mse'] = tf.reduce_mean(
+        #     tf.nn.l2_loss(self.generated_current_frames - self.current_frames))
         # self.loss['future_reconstruction_loss_mse'] = tf.reduce_mean(
         #     tf.nn.l2_loss(self.generated_future_frames - self.future_frames))
 
-        self.loss['input_reconstruction_loss'] = self.loss['input_reconstruction_loss_mse']
+        # self.loss['input_reconstruction_loss'] = self.loss['input_reconstruction_loss_mse']
         # self.loss['future_reconstruction_loss'] = self.loss['future_reconstruction_loss_mse']
 
         # Adversarial loss
@@ -494,7 +499,7 @@ class Model:
         # Label smoothing
         label_noise_spread = self.configs.label_noise_spread
         mean_real = label_noise_spread / 2.0
-        mean_fake = (1.0 + label_noise_spread) / 2.0
+        mean_fake = 1.0 - label_noise_spread / 2.0
         stddev_real = stddev_fake = label_noise_spread / 2.0
         label_real_current = tf.random_normal([self.batch_size, 1], mean=mean_real, stddev=stddev_real, dtype=tf.float32)
         # label_real_future = tf.zeros([self.batch_size, 1])
@@ -504,7 +509,7 @@ class Model:
         # Generator
         self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
         # self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
-        self.loss['autoencoder'] = self.configs.reconstruction_weight * self.loss['input_reconstruction_loss'] + self.loss['generator_current']
+        self.loss['autoencoder'] = self.loss['generator_current']   # + self.configs.reconstruction_weight * self.loss['input_reconstruction_loss']
         # + self.loss['future_reconstruction_loss']
         # + self.loss['generator_future']
 
@@ -528,7 +533,7 @@ class Model:
         tf.summary.histogram('latent', self.z)
 
         # Build encoder summary
-        self.E.build_summary()
+        # self.E.build_summary()
 
         # Build generator(s) summary
         self.Gr.build_summary('current')
@@ -538,7 +543,7 @@ class Model:
         self.D.build_summary()
 
         # Loss summary
-        tf.summary.scalar('loss/input_reconstruction_loss', self.loss['input_reconstruction_loss'])
+        # tf.summary.scalar('loss/input_reconstruction_loss', self.loss['input_reconstruction_loss'])
         # tf.summary.scalar('loss/future_reconstruction_loss', self.loss['future_reconstruction_loss'])
         tf.summary.scalar('loss/generator_current', self.loss['generator_current'])
         tf.summary.scalar('loss/autoencoder', self.loss['autoencoder'])

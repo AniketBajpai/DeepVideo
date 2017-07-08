@@ -85,7 +85,7 @@
   },
   "learner_hyperparameters": {
     "lr_ae": 1e-4,
-    "lr_d": 1e-4,
+    "lr_d": 5e-5,
     "beta1": 0.5,
     "lr_weight_decay": 1,
     "update_ratio": 4,
