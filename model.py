@@ -539,8 +539,11 @@ class Model:
 
         # Generator
         # self.loss['generator_current'] = - tf.reduce_mean(tf.log(self.D_fake_current))
+        """
         self.loss['generator_current'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
             labels=tf.ones([self.batch_size, 1]), logits=self.D_fake_current_logits))
+        """
+        self.loss['generator_current'] = tf.reduce_mean(self.D_fake_current_logits)
         # self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
         # + self.configs.reconstruction_weight * self.loss['input_reconstruction_loss']
         self.loss['autoencoder'] = self.loss['generator_current']
@@ -553,7 +556,8 @@ class Model:
         self.loss['discriminator_fake_current'] = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(labels=label_fake_current, logits=self.D_fake_current_logits))
         # Add disciminator terms for future_frames
-        self.loss['discriminator'] = self.loss['discriminator_real_current'] + self.loss['discriminator_fake_current']
+        # self.loss['discriminator'] = self.loss['discriminator_real_current'] + self.loss['discriminator_fake_current']
+        self.loss['discriminator'] = tf.reduce_mean(self.D_real_current_logits - self.D_fake_current_logits)
         # + self.loss['discriminator_real_future']
         # + self.loss['discriminator_fake_future']
 
