@@ -92,6 +92,7 @@ def load_configs(config_filename=None):
 
 def load_ids():
     ids_filename = 'ids.txt'
+    # ids_filename = 'ids_truncated.txt'
     ids_filename_abs = os.path.join(__PATH__, ids_filename)
     print ('Ids file:', ids_filename_abs)
 

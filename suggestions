@@ -1,0 +1,5 @@
+gradually remove label smoothing after few 1000 iterations
+one side label smoothing
+uniform / truncated random normal
+try cross entropy loss in generator
+update by threshold values instead of ratios

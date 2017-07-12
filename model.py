@@ -108,6 +108,10 @@ class Generator(object):
         self.configs = configs_generator
         self.batch_size = configs_generator.batch_size
         self.latent_dimension = configs_generator.latent_dimension
+        self.num_frames = configs_generator.deconv_f_info.l5_i[0]
+        self.image_height = configs_generator.deconv_f_info.l5_i[1]
+        self.image_width = configs_generator.deconv_f_info.l5_i[2]
+        self.num_channels = configs_generator.deconv_f_info.l5_i[3]
         self.net = {}
 
     def __call__(self, inputs, is_train=True, is_debug=False):
@@ -126,7 +130,8 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_f)
                 assert(outputs_f.get_shape().as_list() == [self.batch_size, fc_dim])
-                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 outputs_f = tf.reshape(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l1, name='reshape')
                 self.net['f_fc_outputs'] = outputs_f
             with tf.variable_scope('deconv2_f') as vscope:
@@ -139,7 +144,8 @@ class Generator(object):
                     k=(k2_d, k2, k2), s=(s2_d, s2, s2), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l2)
                 self.net['f_deconv2_outputs'] = outputs_f
             with tf.variable_scope('deconv3_f') as vscope:
@@ -152,7 +158,8 @@ class Generator(object):
                     k=(k3_d, k3, k3), s=(s3_d, s3, s3), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l3)
                 self.net['f_deconv3_outputs'] = outputs_f
             with tf.variable_scope('deconv4_f') as vscope:
@@ -165,7 +172,8 @@ class Generator(object):
                     k=(k4_d, k4, k4), s=(s4_d, s4, s4), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4)
                 self.net['f_deconv4_outputs'] = outputs_f
             with tf.variable_scope('deconv5_fi') as vscope:
@@ -179,7 +187,7 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_fi)
                 assert(outputs_fi.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l5_i)
-                self.net['f_deconv5i_outputs'] = outputs_fi
+                self.outputs_fi = outputs_fi
             with tf.variable_scope('deconv5_fm') as vscope:
                 k5 = self.configs.deconv_f_info.k5
                 s5 = self.configs.deconv_f_info.s5
@@ -191,7 +199,7 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_fm)
                 assert(outputs_fm.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l5_m)
-                self.net['f_deconv5m_outputs'] = outputs_fm
+                self.outputs_fm = outputs_fm
 
             # Background generator
             with tf.variable_scope('fc_b') as vscope:
@@ -200,7 +208,8 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size, fc_dim])
-                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 outputs_b = tf.reshape(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l1, name='reshape')
                 self.net['b_fc_outputs'] = outputs_b
             with tf.variable_scope('deconv2_b') as vscope:
@@ -209,7 +218,8 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k2, s=self.configs.deconv_f_info.s2, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l2)
                 self.net['b_deconv2_outputs'] = outputs_b
             with tf.variable_scope('deconv3_b') as vscope:
@@ -218,7 +228,8 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k3, s=self.configs.deconv_f_info.s3, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l3)
                 self.net['b_deconv3_outputs'] = outputs_b
             with tf.variable_scope('deconv4_b') as vscope:
@@ -227,7 +238,8 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k4, s=self.configs.deconv_f_info.s4, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='dropout')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout,
+                                              training=self.is_train, name='dropout')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l4)
                 self.net['b_deconv4_outputs'] = outputs_b
             with tf.variable_scope('deconv5_b') as vscope:
@@ -237,35 +249,38 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l5)
-                self.net['b_deconv5_outputs'] = outputs_b
+                self.outputs_b = outputs_b
 
             # Construct output video from forground, background, mask
-            outputs_b = tf.reshape(outputs_b, [self.batch_size, 1] + self.configs.deconv_b_info.l5)
-            outputs_b_vol = tf.tile(outputs_b, [1, self.configs.num_frames, 1, 1, 1])
-            outputs = outputs_fm * outputs_fi + (1 - outputs_fm) * outputs_b_vol
+            # outputs_b = tf.reshape(outputs_b, [self.batch_size, 1] + self.configs.deconv_b_info.l5)
+            # outputs_b_vol = tf.tile(outputs_b, [1, self.configs.num_frames, 1, 1, 1])
+            # self.outputs = outputs_fm * outputs_fi + (1 - outputs_fm) * outputs_b_vol
+            self.outputs = outputs_fi
 
             # Assert that frames are in [-1, 1]
-            generator_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(outputs), 1.),
-                                                [outputs], summarize=0, name='assert/generator_max')
-            generator_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(outputs), -1.),
-                                                [outputs], summarize=0, name='assert/generator_min')
+            generator_max_assert_op = tf.Assert(tf.less_equal(tf.reduce_max(self.outputs), 1.),
+                                                [self.outputs], summarize=0, name='assert/generator_max')
+            generator_min_assert_op = tf.Assert(tf.greater_equal(tf.reduce_max(self.outputs), -1.),
+                                                [self.outputs], summarize=0, name='assert/generator_min')
             tf.add_to_collection('Assert', generator_max_assert_op)
             tf.add_to_collection('Assert', generator_min_assert_op)
 
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
-        return outputs
+        return self.outputs
 
-    def build_summary(self, name):
+    def build_summary(self):
+        name = self.name
+
         # Distribution of generator activations
         tf.summary.histogram('generator/{}/f_deconv2_outputs'.format(name), self.net['f_deconv2_outputs'])
         tf.summary.histogram('generator/{}/f_deconv3_outputs'.format(name), self.net['f_deconv3_outputs'])
         tf.summary.histogram('generator/{}/f_deconv4_outputs'.format(name), self.net['f_deconv4_outputs'])
-        tf.summary.histogram('generator/{}/f_deconv5i_outputs'.format(name), self.net['f_deconv5i_outputs'])
-        tf.summary.histogram('generator/{}/f_deconv5m_outputs'.format(name), self.net['f_deconv5m_outputs'])
+        tf.summary.histogram('generator/{}/f_deconv5i_outputs'.format(name), self.outputs_fi)
+        tf.summary.histogram('generator/{}/f_deconv5m_outputs'.format(name), self.outputs_fm)
         tf.summary.histogram('generator/{}/b_deconv2_outputs'.format(name), self.net['b_deconv2_outputs'])
         tf.summary.histogram('generator/{}/b_deconv3_outputs'.format(name), self.net['b_deconv3_outputs'])
         tf.summary.histogram('generator/{}/b_deconv4_outputs'.format(name), self.net['b_deconv4_outputs'])
-        tf.summary.histogram('generator/{}/b_deconv5_outputs'.format(name), self.net['b_deconv5_outputs'])
+        tf.summary.histogram('generator/{}/b_deconv5_outputs'.format(name), self.outputs_b)
 
         # Generator weights, biases
         tf.summary.scalar('generator/{}/w2_f'.format(name), tf.norm(self.net['w2_f']))
@@ -287,6 +302,19 @@ class Generator(object):
         tf.summary.scalar('generator/{}/b3_b'.format(name), tf.norm(self.net['b3_b']))
         tf.summary.scalar('generator/{}/b4_b'.format(name), tf.norm(self.net['b4_b']))
         tf.summary.scalar('generator/{}/b5_b'.format(name), tf.norm(self.net['b5_b']))
+
+        # Image summary
+        # mask_summary = tf.reshape(self.outputs_fm, (-1, self.num_frames *
+        #                                             self.image_height, self.image_width, self.num_channels))
+        # tf.summary.image('generator/{}/mask'.format(name), mask_summary)
+        # foreground_summary = tf.reshape(self.outputs_fi, (-1, self.num_frames *
+        #                                                   self.image_height, self.image_width, self.num_channels))
+        # tf.summary.image('generator/{}/foreground'.format(name), foreground_summary)
+        # background_summary = tf.reshape(self.outputs_b, (-1, self.image_height, self.image_width, self.num_channels))
+        # tf.summary.image('generator/{}/background'.format(name), background_summary)
+
+        output_summary = tf.reshape(self.outputs, (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
+        tf.summary.image('generator/{}/output'.format(name), output_summary)
 
 
 class Discriminator(object):
@@ -424,10 +452,12 @@ class Model:
         # latent variable - (-1, 1 chosen as encoder has relu activation)
         fd[self.z] = np.random.uniform(-1, 1, [self.batch_size, self.latent_dimension]).astype(np.float32)
 
-        # TODO: add weight annealing
-
         fd[self.is_train] = is_train
 
+        # # Label noise annealing
+        # fd[self.label_noise_spread]
+
+        # TODO: add weight annealing
         return fd
 
     def build_model(self, is_train=True):
@@ -447,6 +477,8 @@ class Model:
         # )
 
         self.is_train = tf.placeholder_with_default(bool(is_train), [], name='is_train')
+
+        # self.label_noise_spread = tf.placeholder_with_default(self.configs.label_noise_spread, [], name='label_noise_spread')
 
         # Encoder
         # self.E = Encoder('Encoder', self.configs_encoder)
@@ -498,18 +530,20 @@ class Model:
 
         # Label smoothing
         label_noise_spread = self.configs.label_noise_spread
-        mean_real = label_noise_spread / 2.0
-        mean_fake = 1.0 - label_noise_spread / 2.0
-        stddev_real = stddev_fake = label_noise_spread / 2.0
-        label_real_current = tf.random_normal([self.batch_size, 1], mean=mean_real, stddev=stddev_real, dtype=tf.float32)
-        # label_real_future = tf.zeros([self.batch_size, 1])
-        label_fake_current = tf.random_normal([self.batch_size, 1], mean=mean_fake, stddev=stddev_fake, dtype=tf.float32)
-        # label_fake_future = tf.ones([self.batch_size, 1])
+        min_real = 1.0 - label_noise_spread / 2.0
+        max_real = 1.0 + label_noise_spread / 2.0
+        # label_fake_current = tf.random_uniform([self.batch_size, 1], mean=mean_fake, stddev=stddev_fake, dtype=tf.float32)
+        label_real_current = tf.random_uniform([self.batch_size, 1], minval=min_real, maxval=max_real, dtype=tf.float32)
+        label_fake_current = tf.zeros([self.batch_size, 1])
+        # label_real_current = tf.ones([self.batch_size, 1])
 
         # Generator
-        self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
+        # self.loss['generator_current'] = - tf.reduce_mean(tf.log(self.D_fake_current))
+        self.loss['generator_current'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.ones([self.batch_size, 1]), logits=self.D_fake_current_logits))
         # self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
-        self.loss['autoencoder'] = self.loss['generator_current']   # + self.configs.reconstruction_weight * self.loss['input_reconstruction_loss']
+        # + self.configs.reconstruction_weight * self.loss['input_reconstruction_loss']
+        self.loss['autoencoder'] = self.loss['generator_current']
         # + self.loss['future_reconstruction_loss']
         # + self.loss['generator_future']
 
@@ -536,8 +570,8 @@ class Model:
         # self.E.build_summary()
 
         # Build generator(s) summary
-        self.Gr.build_summary('current')
-        # self.Gf.build_summary('future')
+        self.Gr.build_summary()
+        # self.Gf.build_summary()
 
         # Build discriminator summary
         self.D.build_summary()
@@ -559,15 +593,6 @@ class Model:
         # input_future_summary = tf.reshape(self.future_frames,
         #                                   (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
         # tf.summary.image('input/future', input_future_summary)
-
-        # TODO: refactor inside generator summary
-        # Generated data summary
-        generated_current_summary = tf.reshape(self.generated_current_frames,
-                                               (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
-        tf.summary.image('generated/current', generated_current_summary)
-        # generated_future_summary = tf.reshape(self.generated_future_frames,
-        #                                       (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
-        # tf.summary.image('generated/future', generated_future_summary)
 
         # Label summary
         tf.summary.scalar('label/real_current', tf.reduce_mean(self.D_real_current))

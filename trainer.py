@@ -19,11 +19,11 @@ from model import Model
 class Trainer(object):
     def __init__(self, configs, dataset_train, dataset_test):
         self.configs = configs
-        hyperparameter_str = '{}_lr_{}_update_G{}_D{}'.format(
+        hyperparameter_str = '{}_lr_{}_update_G{}_dropout_{}'.format(
             configs.dataset,
             str(configs.learner_hyperparameters.lr_ae),
             str(configs.learner_hyperparameters.update_ratio),
-            str(1)
+            str(configs.configs_generator.dropout)
         )
         self.train_dir = '{}/train_dir/{}-{}-{}'.format(
             configs.home_dir,

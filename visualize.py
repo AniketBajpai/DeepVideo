@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import h5py
 import numpy as np
+import cv2
 import imageio
 import glob
 import os
@@ -41,7 +42,7 @@ def visualize(name):
             for j in range(args.num_frames):
                 I = np.reshape(generated_frames[0, j, h_low:h_high, w_low:w_high, 0], (args.h, args.w))
                 if (I < 1.0).all() and (I > -1.0).all():
-                    print ('Image in [-1, 1]')
+                    # print ('Image in [-1, 1]')
                     I = ((I + 1.0) / 2 * 255).astype(np.int32)
 
                 II.append(I)
@@ -51,11 +52,13 @@ def visualize(name):
                 I = np.reshape(generated_frames[0, j, h_low:h_high, w_low:w_high, 0:args.c], (args.h, args.w, args.c))
                 II.append(I)
 
-        # II = np.stack(II)
+        II = np.stack(II)
+        II = np.reshape(II, (args.num_frames * args.h, args.w))
         output_img_path = './outputs/{}_{}_{}.png'.format(args.output_prefix, name, str(counter))
         print ('Writing image:', output_img_path)
-        print (len(II), II[0].shape)
-        imageio.mimwrite(output_img_path, II)
+        print (II.shape)
+        cv2.imwrite(output_img_path, II)
+        # imageio.mimwrite(output_img_path, II)
 
 
 visualize('generated_current')
