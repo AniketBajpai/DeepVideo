@@ -88,7 +88,7 @@
     "lr_d": 5e-5,
     "beta1": 0.5,
     "lr_weight_decay": 1,
-    "update_ratio": 3,
+    "update_ratio": 5,
     "clip_gradients": 20.0
   },
   "reconstruction_weight": 0.00005,

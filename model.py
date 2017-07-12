@@ -529,13 +529,13 @@ class Model:
         # Adversarial loss
 
         # Label smoothing
-        label_noise_spread = self.configs.label_noise_spread
-        min_real = 1.0 - label_noise_spread / 2.0
-        max_real = 1.0 + label_noise_spread / 2.0
+        # label_noise_spread = self.configs.label_noise_spread
+        # min_real = 1.0 - label_noise_spread / 2.0
+        # max_real = 1.0 + label_noise_spread / 2.0
         # label_fake_current = tf.random_uniform([self.batch_size, 1], mean=mean_fake, stddev=stddev_fake, dtype=tf.float32)
-        label_real_current = tf.random_uniform([self.batch_size, 1], minval=min_real, maxval=max_real, dtype=tf.float32)
+        # label_real_current = tf.random_uniform([self.batch_size, 1], minval=min_real, maxval=max_real, dtype=tf.float32)
         label_fake_current = tf.zeros([self.batch_size, 1])
-        # label_real_current = tf.ones([self.batch_size, 1])
+        label_real_current = tf.ones([self.batch_size, 1])
 
         # Generator
         # self.loss['generator_current'] = - tf.reduce_mean(tf.log(self.D_fake_current))
