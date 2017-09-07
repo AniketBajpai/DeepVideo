@@ -46,7 +46,7 @@ class Encoder(object):
                     k=self.configs.conv_info.k1, s=self.configs.conv_info.s1, with_w=True)
                 if is_debug:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l1)
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
@@ -55,7 +55,7 @@ class Encoder(object):
                     k=self.configs.conv_info.k2, s=self.configs.conv_info.s2, with_w=True)
                 if is_debug:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l2)
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
@@ -64,7 +64,7 @@ class Encoder(object):
                     k=self.configs.conv_info.k3, s=self.configs.conv_info.s3, with_w=True)
                 if is_debug:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 assert(outputs.get_shape().as_list() == [self.batch_size] + self.configs.conv_info.l3)
                 self.net['conv3_outputs'] = outputs
             with tf.variable_scope('fc') as vscope:
@@ -125,7 +125,7 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_f)
                 assert(outputs_f.get_shape().as_list() == [self.batch_size, fc_dim])
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 outputs_f = tf.reshape(outputs_f, [self.batch_size] + self.configs.deconv_f_info.l1, name='reshape')
                 self.net['f_fc_outputs'] = outputs_f
             with tf.variable_scope('deconv2_f') as vscope:
@@ -138,7 +138,7 @@ class Generator(object):
                     k=(k2_d, k2, k2), s=(s2_d, s2, s2), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l2)
                 self.net['f_deconv2_outputs'] = outputs_f
             with tf.variable_scope('deconv3_f') as vscope:
@@ -151,7 +151,7 @@ class Generator(object):
                     k=(k3_d, k3, k3), s=(s3_d, s3, s3), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l3)
                 self.net['f_deconv3_outputs'] = outputs_f
             with tf.variable_scope('deconv4_f') as vscope:
@@ -164,7 +164,7 @@ class Generator(object):
                     k=(k4_d, k4, k4), s=(s4_d, s4, s4), padding='VALID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_f)
-                # outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
+                outputs_f = tf.layers.dropout(outputs_f, rate=self.configs.dropout, training=self.is_train, name='outputs_f')
                 assert(outputs_f.get_shape().as_list() == [self.batch_size] + self.configs.deconv_f_info.l4)
                 self.net['f_deconv4_outputs'] = outputs_f
             with tf.variable_scope('deconv5_fi') as vscope:
@@ -199,7 +199,7 @@ class Generator(object):
                 if is_debug:
                     print(vscope.name, outputs_b)
                 assert(outputs_b.get_shape().as_list() == [self.batch_size, fc_dim])
-                # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
                 outputs_b = tf.reshape(outputs_b, [self.batch_size] + self.configs.deconv_b_info.l1, name='reshape')
                 self.net['b_fc_outputs'] = outputs_b
             with tf.variable_scope('deconv2_b') as vscope:
@@ -208,7 +208,7 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k2, s=self.configs.deconv_f_info.s2, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l2)
                 self.net['b_deconv2_outputs'] = outputs_b
             with tf.variable_scope('deconv3_b') as vscope:
@@ -217,7 +217,7 @@ class Generator(object):
                     k=self.configs.deconv_b_info.k3, s=self.configs.deconv_f_info.s3, padding='VAID', with_w=True)
                 if is_debug:
                     print(vscope.name, outputs_b)
-                # outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
+                outputs_b = tf.layers.dropout(outputs_b, rate=self.configs.dropout, training=self.is_train, name='outputs_b')
                 assert(outputs_b.get_shape().as_list() == [self.batch_size] + self.configs.deconv_b_info.l3)
                 self.net['b_deconv3_outputs'] = outputs_b
             with tf.variable_scope('deconv4_b') as vscope:
@@ -314,21 +314,21 @@ class Discriminator(object):
                                  is_train=self.is_train, with_w=True)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv1_outputs'] = outputs
             with tf.variable_scope('conv2') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l2,
                                  is_train=self.is_train, with_w=True)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv2_outputs'] = outputs
             with tf.variable_scope('conv3') as vscope:
                 outputs = conv3d(outputs, [self.batch_size] + self.configs.conv_info.l3,
                                  is_train=self.is_train, with_w=True)
                 if is_debug and not self.reuse:
                     print(vscope.name, outputs)
-                # outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
+                outputs = tf.layers.dropout(outputs, rate=self.configs.dropout, training=self.is_train, name='outputs')
                 self.net['conv3_outputs'] = outputs
             with tf.variable_scope('fc') as vscope:
                 fc_dim = reduce(mul, self.configs.conv_info.l3, 1)
@@ -353,7 +353,7 @@ class Model:
         # Model info
         self.configs_encoder = configs.configs_encoder
         self.configs_generator = configs.configs_generator
-        # self.configs_discriminator = configs.configs_discriminator
+        self.configs_discriminator = configs.configs_discriminator
 
         self.configs_encoder.batch_size = configs.batch_size
         self.configs_encoder.num_frames = configs.data_info.num_frames
@@ -361,7 +361,7 @@ class Model:
         self.configs_generator.batch_size = configs.batch_size
         self.configs_generator.num_frames = configs.data_info.num_frames
         self.configs_generator.latent_dimension = configs.latent_dimension
-        # self.configs_discriminator.batch_size = configs.batch_size
+        self.configs_discriminator.batch_size = configs.batch_size
 
         # Data info
         self.num_frames = configs.data_info.num_frames
@@ -372,7 +372,7 @@ class Model:
 
         self.latent_dimension = configs.latent_dimension
         self.lr_ae = configs.learner_hyperparameters.lr_ae
-        # self.lr_d = configs.learner_hyperparameters.lr_d
+        self.lr_d = configs.learner_hyperparameters.lr_d
         self.beta1 = configs.learner_hyperparameters.beta1
 
         self.batch_size = configs.batch_size
@@ -389,7 +389,7 @@ class Model:
         ''' Organize data into a feed dictionary '''
         fd = {
             self.current_frames: batch_chunk['current_frames'],
-            # self.future_frames: batch_chunk['future_frames'],
+            self.future_frames: batch_chunk['future_frames'],
             # self.label: batch_chunk['label'],
         }
 
@@ -423,18 +423,18 @@ class Model:
 
         # Generators
         self.Gr = Generator('Generator_R', self.configs_generator)
-        # self.Gf = Generator('Generator_F', self.configs_generator)
+        self.Gf = Generator('Generator_F', self.configs_generator)
 
         self.generated_current_frames = self.Gr(self.z, is_debug=self.is_debug)
-        # self.generated_future_frames = self.Gf(self.z, is_debug=self.is_debug)
+        self.generated_future_frames = self.Gf(self.z, is_debug=self.is_debug)
 
-        # # Discriminators
-        # self.D = Discriminator('Discriminator', self.configs_discriminator)
-        #
-        # self.D_real_current, self.D_real_current_logits = self.D(self.current_frames, is_debug=self.is_debug)
-        # self.D_fake_current, self.D_fake_current_logits = self.D(self.generated_current_frames, is_debug=self.is_debug)
-        # self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
-        # self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
+        # Discriminators
+        self.D = Discriminator('Discriminator', self.configs_discriminator)
+
+        self.D_real_current, self.D_real_current_logits = self.D(self.current_frames, is_debug=self.is_debug)
+        self.D_fake_current, self.D_fake_current_logits = self.D(self.generated_current_frames, is_debug=self.is_debug)
+        self.D_real_future, self.D_real_future_logits = self.D(self.future_frames, is_debug=self.is_debug)
+        self.D_fake_future, self.D_fake_future_logits = self.D(self.generated_future_frames, is_debug=self.is_debug)
 
         print_message('Successfully loaded the model')
 
@@ -447,35 +447,35 @@ class Model:
         # L2 loss
         self.loss['input_reconstruction_loss_mse'] = tf.reduce_mean(
             tf.nn.l2_loss(self.generated_current_frames - self.current_frames))
-        # self.loss['future_reconstruction_loss_mse'] = tf.reduce_mean(
-        #     tf.nn.l2_loss(self.generated_future_frames - self.future_frames))
+        self.loss['future_reconstruction_loss_mse'] = tf.reduce_mean(
+            tf.nn.l2_loss(self.generated_future_frames - self.future_frames))
 
         self.loss['input_reconstruction_loss'] = self.loss['input_reconstruction_loss_mse']
-        # self.loss['future_reconstruction_loss'] = self.loss['future_reconstruction_loss_mse']
+        self.loss['future_reconstruction_loss'] = self.loss['future_reconstruction_loss_mse']
 
-        # # Adversarial loss
-        # label_real_current = tf.zeros([self.batch_size, 1])
-        # label_real_future = tf.zeros([self.batch_size, 1])
-        # label_fake_current = tf.ones([self.batch_size, 1])
-        # label_fake_future = tf.ones([self.batch_size, 1])
+        # Adversarial loss
+        label_real_current = tf.zeros([self.batch_size, 1])
+        label_real_future = tf.zeros([self.batch_size, 1])
+        label_fake_current = tf.ones([self.batch_size, 1])
+        label_fake_future = tf.ones([self.batch_size, 1])
 
         # Generator
-        # self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
-        # self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
-        self.loss['autoencoder'] = self.loss['input_reconstruction_loss']  # + self.loss['future_reconstruction_loss']
-        #  + self.loss['generator_current'] + self.loss['generator_future']
+        self.loss['generator_current'] = tf.reduce_mean(tf.log(self.D_fake_current))
+        self.loss['generator_future'] = tf.reduce_mean(tf.log(self.D_fake_future))
+        self.loss['autoencoder'] = self.loss['input_reconstruction_loss'] + self.loss['future_reconstruction_loss']
+        + self.loss['generator_current'] + self.loss['generator_future']
 
-        # # Discriminator adversarial loss
-        # self.loss['discriminator_real_current'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_real_current, label_real_current))
-        # self.loss['discriminator_fake_current'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_fake_current, label_fake_current))
-        # self.loss['discriminator_real_future'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_real_future, label_real_future))
-        # self.loss['discriminator_fake_future'] = tf.reduce_mean(
-        #     tf.nn.sigmoid_cross_entropy_with_logits(self.D_fake_future, label_fake_future))
-        # self.loss['discriminator'] = self.loss['discriminator_real_current'] + self.loss['discriminator_fake_current'] + \
-        #     self.loss['discriminator_fake_current'] + self.loss['discriminator_fake_future']
+        # Discriminator adversarial loss
+        self.loss['discriminator_real_current'] = tf.reduce_mean(
+            tf.nn.sigmoid_cross_entropy_with_logits(self.D_real_current, label_real_current))
+        self.loss['discriminator_fake_current'] = tf.reduce_mean(
+            tf.nn.sigmoid_cross_entropy_with_logits(self.D_fake_current, label_fake_current))
+        self.loss['discriminator_real_future'] = tf.reduce_mean(
+            tf.nn.sigmoid_cross_entropy_with_logits(self.D_real_future, label_real_future))
+        self.loss['discriminator_fake_future'] = tf.reduce_mean(
+            tf.nn.sigmoid_cross_entropy_with_logits(self.D_fake_future, label_fake_future))
+        self.loss['discriminator'] = self.loss['discriminator_real_current'] + self.loss['discriminator_fake_current'] + \
+            self.loss['discriminator_fake_current'] + self.loss['discriminator_fake_future']
 
         # # Classification accuracy - for supervised
         # self.accuracy
@@ -491,25 +491,25 @@ class Model:
 
         # Build generator(s) summary
         self.Gr.build_summary('current')
-        # self.Gf.build_summary('future')
+        self.Gf.build_summary('future')
 
         # Loss summary
         tf.summary.scalar('loss/input_reconstruction_loss', self.loss['input_reconstruction_loss'])
-        # tf.summary.scalar('loss/future_reconstruction_loss', self.loss['future_reconstruction_loss'])
+        tf.summary.scalar('loss/future_reconstruction_loss', self.loss['future_reconstruction_loss'])
         tf.summary.scalar('loss/autoencoder', self.loss['autoencoder'])
 
         # Input data summary
         input_current_summary = tf.reshape(self.current_frames,
                                            (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
         tf.summary.image('input/current', input_current_summary)
-        # input_future_summary = tf.reshape(self.future_frames,
-        #                                   (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
-        # tf.summary.image('input/future', input_future_summary)
+        input_future_summary = tf.reshape(self.future_frames,
+                                          (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
+        tf.summary.image('input/future', input_future_summary)
 
         # Generated data summary
         generated_current_summary = tf.reshape(self.generated_current_frames,
                                                (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
         tf.summary.image('generated/current', generated_current_summary)
-        # generated_future_summary = tf.reshape(self.generated_future_frames,
-        #                                       (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
-        # tf.summary.image('generated/future', generated_future_summary)
+        generated_future_summary = tf.reshape(self.generated_future_frames,
+                                              (-1, self.num_frames * self.image_height, self.image_width, self.num_channels))
+        tf.summary.image('generated/future', generated_future_summary)
