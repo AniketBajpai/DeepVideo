@@ -11,9 +11,9 @@ The model is tested on two publicly available datasets: [moving MNIST](http://ww
 ## Results
 
 #### TSNE of action embeddings
-<img src="figure/25.png" height="250"/>
-<img src="figure/16.png" height="250"/>
-<img src="figure/13.png" height="250"/>
+<img src="figures/25.png"/>
+<img src="figures/16.png"/>
+<img src="figures/13.png"/>
 
 ## Related works
 * [Unsupervised Learning of Video Representations using LSTMs](https://arxiv.org/abs/1502.04681)
