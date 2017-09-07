@@ -1,0 +1,95 @@
+ {
+  "home_dir": "/home/quantumcoder/DeepVideo",
+  "dataset": "ucf101",
+  "crop_height": 64,
+  "crop_width": 64,
+  "batch_size": 4,
+  "latent_dimension": 4000,
+  "data_info": {
+    "num_frames": 10,
+    "image_height": 64,
+    "image_width": 64,
+    "num_channels": 1
+  },
+  "configs_encoder": {
+    "conv_info": {
+      "input": [10, 64, 64, 1],
+      "k1": 4,
+      "s1": 2,
+      "l1": [5, 32, 32, 64],
+      "k2": 4,
+      "s2": 2,
+      "l2": [3, 16, 16, 128],
+      "k3": 4,
+      "s3": 2,
+      "l3": [2, 8, 8, 256]
+    }
+  },
+  "configs_generator": {
+    "deconv_f_info": {
+      "l1": [1, 1, 1, 256],
+      "k2": 4,
+      "s2": 4,
+      "k2_d": 2,
+      "s2_d": 2,
+      "l2": [2, 4, 4, 128],
+      "k3": 2,
+      "s3": 2,
+      "k3_d": 2,
+      "s3_d": 1,
+      "l3": [3, 8, 8, 64],
+      "k4": 4,
+      "s4": 4,
+      "k4_d": 3,
+      "s4_d": 1,
+      "l4": [5, 32, 32, 10],
+      "k5": 4,
+      "s5": 2,
+      "k5_d": 4,
+      "s5_d": 2,
+      "l5_i": [10, 64, 64, 1],
+      "l5_m": [10, 64, 64, 1]
+    },
+    "deconv_b_info": {
+      "l1": [1, 1, 256],
+      "k2": 4,
+      "s2": 4,
+      "l2": [4, 4, 128],
+      "k3": 2,
+      "s3": 2,
+      "l3": [8, 8, 64],
+      "k4": 4,
+      "s4": 4,
+      "l4": [32, 32, 10],
+      "k5": 4,
+      "s5": 2,
+      "l5": [64, 64, 1]
+    }
+  },
+  "configs_discriminator": {
+    "conv_info": {
+      "input": [10, 64, 64, 1],
+      "l1": [5, 32, 32, 64],
+      "l2": [3, 16, 16, 128],
+      "l3": [2, 8, 8, 256]
+    }
+  },
+  "learner_hyperparameters": {
+    "lr_ae": 1e-4,
+    "lr_d": 5e-5,
+    "beta1": 0.5,
+    "lr_weight_decay": 1,
+    "update_ratio": 5,
+    "clip_gradients": 50.0
+  },
+  "prefix": "autoencoder",
+  "ckpt_dir": "./checkpoints/ucf101/",
+  "log_dir": "./logs/ucf101/",
+  "log_step": 10,
+  "test_step": 100,
+  "summaries_secs": 300,
+  "checkpoint_secs": 600,
+  "output_save_step": 1000,
+  "dump_result": 1,
+  "max_steps": 1000000
+}
