@@ -264,15 +264,13 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='moving_mnist',
-                        choices=['moving_mnist', 'yfcc100m/golf', 'yfcc100m/beach'])
+                        choices=['moving_mnist', 'ucf101'])
     args = parser.parse_args()
 
     if args.dataset == 'moving_mnist':
         import datasets.moving_mnist as dataset
-    elif args.dataset == 'yfcc100m/golf':
-        pass
-    elif args.dataset == 'yfcc100m/beach':
-        pass
+    elif args.dataset == 'ucf101':
+        import datasets.ucf as dataset
     else:
         raise ValueError(args.dataset)
 
